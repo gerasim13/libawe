@@ -16,7 +16,6 @@ namespace awe
 {
     /**
      * Stereo channel mixer, for mixing gain and panning.
-     * 
      */
     struct AschMixer
     {

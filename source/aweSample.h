@@ -25,7 +25,7 @@ namespace awe {
             /**
              * Default constructor
              */
-            Asample (AiBuffer* const &_source, const Afloat &_peak, const unsigned &_rate, const std::string &_name = "Unnamed sample", const Aloop::Mode &_loop = Aloop::ONCE | Aloop::FORWARD) :
+            Asample (AiBuffer* const &_source, const Afloat &_peak, const unsigned &_rate, const std::string &_name = "Unnamed sample", const Aloop::Mode &_loop = Aloop::Mode::__DEFAULT) :
                 Asource     (),
                 source      (_source),
                 sourcePeak  (_peak),
@@ -39,13 +39,13 @@ namespace awe {
              * Load from file constructor.
              * This function blocks execution and leaves source as nullptr if it fails to load the sample from file.
              */
-            Asample (const std::string &file, const Aloop::Mode &_loop = Aloop::ONCE | Aloop::FORWARD);
+            Asample (const std::string &file, const Aloop::Mode &_loop = Aloop::Mode::__DEFAULT);
 
             /**
              * Load from memory constructor.
              * This function blocks execution and leaves source as nullptr if it fails to load the sample from memory.
              */
-            Asample (char* mptr, const size_t &size, const std::string &_name = "Unnamed sample", const Aloop::Mode &_loop = Aloop::ONCE | Aloop::FORWARD);
+            Asample (char* mptr, const size_t &size, const std::string &_name = "Unnamed sample", const Aloop::Mode &_loop = Aloop::Mode::__DEFAULT);
 
             inline bool setSource (AiBuffer* const _source, const Afloat &_peak, const unsigned &_rate)
             {

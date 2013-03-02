@@ -83,8 +83,8 @@ namespace awe {
                 }
             }
             
-            inline       container_type&  getContainer()       { return data; }
-            inline const container_type&  getContainer() const { return data; }
+            inline       container_type&  getContainer()       { return pcm_data; }
+            inline const container_type&  getContainer() const { return pcm_data; }
             
             inline unsigned  char      getChannelCount() const { return channels;                    } /** @return number of channels in the buffer             */
             inline           size_type getBufferSize  () const { return pcm_data.size() * sizeof(T); } /** @return size of the entire buffer       (in bytes)   */

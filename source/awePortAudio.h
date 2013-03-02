@@ -10,14 +10,13 @@ namespace awe {
     /* PortAudio object to communicate to the audio device. */    
     class APortAudio
     {
-        private:
-
+        public:
             struct PaCallbackPacket {
                 std::queue<float>*  output;
                 unsigned char       calls;      // Number of times PA ran this callback since last update.
                 unsigned char       underflows; // Number of times PA reported underflow problems since last update.
             };
-
+        private:
             PaError             pa_error;
 
             PaStream          * pa_outstream;

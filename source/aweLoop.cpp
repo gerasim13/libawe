@@ -30,9 +30,9 @@ namespace awe {
 
         switch (getMethod(mode))
         {
-            case UNDEFINED:
+            case Aloop::Mode::UNDEFINED:
                 // Warn undefined loop mode
-            case ONCE:
+            case Aloop::Mode::ONCE:
                 if (isForward(mode)) {
                     now += b;
                     if (now > end) {
@@ -49,7 +49,7 @@ namespace awe {
 
                 break;
 
-            case REPEAT:
+            case Aloop::Mode::REPEAT:
                 if (isForward(mode))
                     now += b;
                 else
@@ -62,7 +62,7 @@ namespace awe {
 
                 break;
 
-            case ALTERNATING:
+            case Aloop::Mode::ALTERNATING:
                 if (isForward(mode))
                     now += b;
                 else
@@ -76,7 +76,7 @@ namespace awe {
             default:
                 std::ostringstream error_string;
                 error_string
-                    << "Invalid loop mode {in binary " << std::bitset<8>(mode)
+                    << "Invalid loop mode {in binary " << std::bitset<8>(*mode)
                     << "} encountered on loop object " << std::hex << this
                     << "." << std::endl;
                 throw std::invalid_argument(error_string.str().c_str());

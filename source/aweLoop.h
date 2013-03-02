@@ -15,7 +15,7 @@ namespace awe {
     {
         public:
             /** Loop mode enumerator and operators */
-            enum Mode : std::uint8_t {
+            enum class Mode : std::uint8_t {
 				// First two bits is the loop method
 				UNDEFINED   = 0x0,
 
@@ -27,6 +27,9 @@ namespace awe {
 				// Forth bit is move direction
 				FORWARD     = 0x0,
 				REVERSE     = 0x8,
+
+                // Default
+                __DEFAULT   = FORWARD | ONCE,
 
 				// Masks
 				__LOOP_MODE = 0x3,
@@ -53,18 +56,21 @@ namespace awe {
             inline unsigned long long sunow   () const { return unow() < uend() ? unow() : uend() - 1; }
             inline unsigned long long suend   () const { return uend() - 1; }
     };
-    
-	inline static bool        isReverse (const Aloop::Mode &mode) { return (mode & Aloop::Mode::__DIRECTION) == Aloop::Mode::__DIRECTION; }
+   
+    inline static std::uint8_t operator* (const Aloop::Mode&  mode) { return static_cast<std::uint8_t>(mode); }
+    inline static std::uint8_t operator* (const Aloop::Mode&& mode) { return static_cast<std::uint8_t>(mode); }
+
+	inline static bool        isReverse (const Aloop::Mode &mode) { return (*mode & *Aloop::Mode::__DIRECTION) == *Aloop::Mode::__DIRECTION; }
 	inline static bool        isForward (const Aloop::Mode &mode) { return !isReverse(mode); }
-	inline static Aloop::Mode getMethod (const Aloop::Mode &mode) { return static_cast<Aloop::Mode>(mode & Aloop::Mode::__LOOP_MODE); } /** b'00000111' */
+	inline static Aloop::Mode getMethod (const Aloop::Mode &mode) { return static_cast<Aloop::Mode>(*mode & *Aloop::Mode::__LOOP_MODE); } /** b'00000111' */
 
     /* Aloop::Mode global operator overloading. */
-    inline static Aloop::Mode operator& (const Aloop::Mode &a, const Aloop::Mode &b) { return static_cast<Aloop::Mode>(a & b); } /** Bit-wise AND operator */
-    inline static Aloop::Mode operator| (const Aloop::Mode &a, const Aloop::Mode &b) { return static_cast<Aloop::Mode>(a | b); } /** Bit-wise  OR operator */
-    inline static Aloop::Mode operator^ (const Aloop::Mode &a, const Aloop::Mode &b) { return static_cast<Aloop::Mode>(a ^ b); } /** Bit-wise XOR operator */
-    inline static Aloop::Mode operator~ (const Aloop::Mode &mode) { return static_cast<Aloop::Mode>(mode ^  Aloop::Mode::__DIRECTION); } /** Inverts the loop direction */
-    inline static Aloop::Mode operator+ (const Aloop::Mode &mode) { return static_cast<Aloop::Mode>(mode & ~Aloop::Mode::__DIRECTION); /* b'11110111' */ } /** Forces the direction to forward */
-    inline static Aloop::Mode operator- (const Aloop::Mode &mode) { return static_cast<Aloop::Mode>(mode |  Aloop::Mode::__DIRECTION); /* b'00001000' */ } /** Forces the direction to reverse */
+    inline static Aloop::Mode operator& (const Aloop::Mode &a, const Aloop::Mode &b) { return static_cast<Aloop::Mode>(*a & *b); } /** Bit-wise AND operator */
+    inline static Aloop::Mode operator| (const Aloop::Mode &a, const Aloop::Mode &b) { return static_cast<Aloop::Mode>(*a | *b); } /** Bit-wise  OR operator */
+    inline static Aloop::Mode operator^ (const Aloop::Mode &a, const Aloop::Mode &b) { return static_cast<Aloop::Mode>(*a ^ *b); } /** Bit-wise XOR operator */
+    inline static Aloop::Mode operator~ (const Aloop::Mode &mode) { return static_cast<Aloop::Mode>(*mode ^  *Aloop::Mode::__DIRECTION); } /** Inverts the loop direction */
+    inline static Aloop::Mode operator+ (const Aloop::Mode &mode) { return static_cast<Aloop::Mode>(*mode & ~*Aloop::Mode::__DIRECTION); /* b'11110111' */ } /** Forces the direction to forward */
+    inline static Aloop::Mode operator- (const Aloop::Mode &mode) { return static_cast<Aloop::Mode>(*mode |  *Aloop::Mode::__DIRECTION); /* b'00001000' */ } /** Forces the direction to reverse */
 
 }
 #endif

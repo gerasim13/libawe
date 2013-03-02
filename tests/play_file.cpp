@@ -1,6 +1,5 @@
 #include "aweEngine.h"
 #include "aweSample.h"
-#include "awesndfile.h"
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
