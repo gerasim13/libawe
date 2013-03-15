@@ -1,8 +1,9 @@
-#include "aweEngine.h"
-#include "aweSample.h"
+#include "../source/aweEngine.h"
+#include "../source/aweSample.h"
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <thread>
 
 using namespace awe;
 
@@ -40,7 +41,7 @@ int main (int argc, char **argv)
     frameCount = (frameCount < 128) ? 128 : frameCount; /* Minimum of 128 frames per update */
 
     /*- Start engine -*/
-    AEngine *engine = new AEngine (44100, frameCount);
+    AEngine* engine = new AEngine (44100, frameCount);
 
     /*- Open file -*/
     Asample* smp = new Asample(argv[1]);
@@ -49,6 +50,9 @@ int main (int argc, char **argv)
         printf("Failed to read file. Exiting... \n");
         return 0;
     }
+
+    engine->getMasterTrack().attach_source(smp);
+
 #if 0
     /*- Play source directly into Master Output Track -*/
     Asound* src = new Asound(smp, 1.0f, 0.0f, 1.0f, playSpeed);
@@ -60,36 +64,45 @@ int main (int argc, char **argv)
     /*- Main loop -*/
     while (engine->getMasterTrack().count_active_sources() != 0)
     {
-        engine->update();
-        /*- Console Visualization -*/
-        Asfloatf wvSum({{ .0f, .0f }}); // Waveform
+        if (engine->update() == false) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        } else {
+            /*- Console Visualization -*/
+#ifndef _MSC_VER
+            Asfloatf wvSum = { .0f, .0f }; // Waveform
+#else
+            /* MSVC2012 does not have initializer lists, so you have to do it this way. */
+           
+            Asfloatf wvSum;
+            wvSum[0] = .0f;
+            wvSum[1] = .0f;
+#endif
+            const AfBuffer& output = engine->getMasterTrack().cgetOutput();
+
+            for (unsigned t=0; t<frameCount; t++)
+            {
+                Asfloatf wvVol = output.getFrame(t);
+                wvVol.abs();
+                wvVol *= 10.0f;
+                wvSum += wvVol;
+            }
+
+            wvSum /= frameCount;
+            wvSum *= 3.14159265f;
+
+            char wvM[17]; wvM[16] = 0; // Waveform, left
+            char wvN[17]; wvN[16] = 0; // Waveform, right
+
+            for (int i=0; i<16; i++)
+                wvM[15-i] =
+                    (wvSum[0]-i)? ((wvSum[0]-i<0)? ' ' : '-') : '*'; 
+            for (int i=0; i<16; i++)
+                wvN[i] =
+                    (wvSum[1]-i)? ((wvSum[1]-i<0)? ' ' : '-') : '*'; 
 
 
-        const AfBuffer& output = engine->getMasterTrack().cgetOutput();
-
-        for (unsigned t=0; t<frameCount; t++)
-        {
-            Asfloatf wvVol = output.getFrame(t);
-            wvVol.abs();
-            wvVol *= 10.0f;
-            wvSum += wvVol;
+            printf ("%s+%s\n", wvM, wvN);
         }
-
-        wvSum /= frameCount;
-        wvSum *= 3.14159265f;
-
-        char wvM[17]; wvM[16] = 0; // Waveform, left
-        char wvN[17]; wvN[16] = 0; // Waveform, right
-
-        for (int i=0; i<16; i++)
-            wvM[15-i] =
-                (wvSum[0]-i)? ((wvSum[0]-i<0)? ' ' : '-') : '*'; 
-        for (int i=0; i<16; i++)
-            wvN[i] =
-                (wvSum[1]-i)? ((wvSum[1]-i<0)? ' ' : '-') : '*'; 
-
-
-        printf ("%s+%s\n", wvM, wvN);
     } // elihw
 
     printf ("Done playing. Cleaning-up... \n");

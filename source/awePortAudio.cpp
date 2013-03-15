@@ -33,10 +33,12 @@ namespace awe {
             }
 #endif
         } else {
+            data->mutex->lock();
             for (unsigned int i=0; i<framesPerBuffer; i++) {
                 *out++ = data->output->front(); data->output->pop();
                 *out++ = data->output->front(); data->output->pop();
             }
+            data->mutex->unlock();
         }
 
         data->calls++;
@@ -58,8 +60,10 @@ namespace awe {
             Pa_Terminate();
             return false;
         }
-
-        pa_packet = { &output_queue, 0, 0 };
+        pa_packet.mutex       = &output_mutex;
+        pa_packet.output      = &output_queue;
+        pa_packet.calls       = 0;
+        pa_packet.underflows  = 0;
 
         pa_outstream_params.channelCount = 2;  /* Stereo output. */
         pa_outstream_params.sampleFormat = paFloat32;

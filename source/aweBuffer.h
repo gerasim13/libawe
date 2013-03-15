@@ -4,6 +4,7 @@
 #ifndef AWE_BUFFER_H
 #define AWE_BUFFER_H
 
+#include <cassert>
 #include "aweCompileConfig.h"
 #include "aweDefine.h"
 
@@ -56,6 +57,8 @@ namespace awe {
             Abuffer (const unsigned char &_channels, const size_type &_frames, const bool &_init = true) :
                 pcm_data(), channels(_channels)
                 {
+                    assert(channels != 0);
+
                     if (_init == true) {
                         pcm_data.reserve(_channels * _frames);
                         pcm_data.resize (_channels * _frames);
@@ -89,7 +92,7 @@ namespace awe {
             inline unsigned  char      getChannelCount() const { return channels;                    } /** @return number of channels in the buffer             */
             inline           size_type getBufferSize  () const { return pcm_data.size() * sizeof(T); } /** @return size of the entire buffer       (in bytes)   */
             inline           size_type getSampleCount () const { return pcm_data.size();             } /** @return number of samples in the buffer (in samples) */
-            inline constexpr size_type getSampleSize  () const { return sizeof(T);                   } /** @return size of a single sample         (in bytes)   */
+            inline const     size_type getSampleSize  () const { return sizeof(T);                   } /** @return size of a single sample         (in bytes)   */
             inline           size_type getFrameCount  () const { return pcm_data.size() / channels;  } /** @return number of frames in the buffer  (in frames)  */
             inline           size_type getFrameSize   () const { return sizeof(T) * channels;        } /** @return size of a single frame          (in bytes)   */
 

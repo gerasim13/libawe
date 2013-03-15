@@ -23,7 +23,7 @@ namespace awe {
             AschMixer       mixer;
         public:
             Atrack (const size_t &sample_rate, const size_t &frames) :
-                config ({sample_rate, frames, 0, ArenderConfig::renderQuality::DEFAULT}),
+                config          (sample_rate, frames),
                 pool_buffer     (2, frames),
                 output_buffer   (2, frames),
                 mixer           (1.0f, 0.0f)
@@ -52,7 +52,7 @@ namespace awe {
 
             inline bool detach_source(Asource* const src)
             {
-                return pool_sources.erase(src);
+                return pool_sources.erase(src) != 0;
             }
 
             inline void pull()

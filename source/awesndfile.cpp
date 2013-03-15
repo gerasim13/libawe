@@ -8,8 +8,8 @@ namespace awe {
     void read_sndfile(Asample* sample, SNDFILE* sndf, SF_INFO* info)
     {
         // Two buffers needed for overclip bug workaround
-        AiBuffer* bufi = new AiBuffer(info->frames, info->channels, false);
-        AfBuffer* buff = new AfBuffer(info->frames, info->channels, true );
+        AiBuffer* bufi = new AiBuffer(info->channels, info->frames, false);
+        AfBuffer* buff = new AfBuffer(info->channels, info->frames, true );
 
         // Read as float
         sf_readf_float(sndf, buff->data(), info->frames);
@@ -160,7 +160,7 @@ namespace awe {
     {
         SF_INFO* info = new SF_INFO;
         SNDFILE* sndf;
-        awe_sf_vmio_data vmiod { 0, static_cast<sf_count_t>(size), mptr };
+        awe_sf_vmio_data vmiod = { 0, static_cast<sf_count_t>(size), mptr };
 
         sndf = sf_open_virtual(&awe_sf_vmio, SFM_READ, info, (void*)&vmiod);
 

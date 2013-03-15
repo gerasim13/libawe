@@ -17,13 +17,21 @@ void Asample::render (AfBuffer &buffer, const ArenderConfig &config)
 
     for(size_t i = config.targetFrameOffset; i < config.targetFrameOffset + config.targetFrameCount; i++)
     {
-        const size_t z = loop.sunow();
+        const unsigned long long z = loop.sunow();
+#ifdef _MSC_VER
+        // Incomplete C++11 implementation in VS2012
+        Asfloatf::data_type fdata = {
+            to_Afloat(source->getSample(z * source->getChannelCount()    )),
+            to_Afloat(source->getSample(z * source->getChannelCount() + 1))
+        };
 
+        Asfloatf frame(fdata);
+#else
         Asfloatf frame ( Asfloatf::data_type {{
                 to_Afloat(source->getSample(z * source->getChannelCount()    )),
                 to_Afloat(source->getSample(z * source->getChannelCount() + 1))
                 }} );
-
+#endif
         mixer(frame);
 
         buffer.at(i*2  ) += frame.data[0];

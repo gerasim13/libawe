@@ -4,7 +4,6 @@
 #ifndef AWE_DEFINE
 #define AWE_DEFINE
 
-#include <initializer_list>
 #include <algorithm>
 #include <array>
 #include <queue>
@@ -57,8 +56,9 @@ namespace awe
             data_type data;
 
             Aframe () : data() {} 
-            Aframe (const T*         _data) : data() { std::copy(_data, _data + Channels, data.begin()); }
-            Aframe (const data_type& _data) : data(_data) {}
+            Aframe (const T*          _data) : data() { std::copy(_data, _data + Channels, data.begin()); }
+            Aframe (const data_type&  _data) : data(_data) {}
+            Aframe (const data_type&& _data) : data(_data) {}
 
                   T& operator[](size_t pos)       { return data[pos]; }
             const T& operator[](size_t pos) const { return data[pos]; }
@@ -167,6 +167,18 @@ namespace awe
             MUTE     = 0xE,
             SKIP     = 0xF
         } quality;
+
+        ArenderConfig (
+            unsigned long sample_rate,
+            unsigned long frame_count,
+            unsigned long frame_offset = 0,
+            renderQuality q = renderQuality::DEFAULT
+        ) : targetSampleRate    (sample_rate),
+            targetFrameCount    (frame_count),
+            targetFrameOffset   (frame_offset),
+            quality             (q)
+        {}
+
     };
 
 } // namespace awe

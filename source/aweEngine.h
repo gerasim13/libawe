@@ -29,7 +29,27 @@ namespace awe {
         }
 
             inline Atrack& getMasterTrack() { return master_output; }
-            inline void update() { master_output.flip(); master_output.push(output_device.getFIFOBuffer()); }
+            
+            /** @todo Add some sort of multi-threading support. */
+            inline bool update()
+            {
+                if (output_device.getFIFOBuffer().size() < master_output.getOutput().getSampleCount())
+                {
+                    // Process stuff
+                    master_output.pull();
+                    master_output.flip();
+
+                    // Push to output device buffer
+                    output_device.getFIFOBuffer_mutex().lock();
+                    master_output.push(output_device.getFIFOBuffer());
+                    output_device.getFIFOBuffer_mutex().unlock();
+
+                    return true;
+                } else {
+                    return false;
+                }
+
+            }
     };
 
 }

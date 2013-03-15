@@ -18,7 +18,7 @@ namespace awe {
     sf_count_t awe_sf_vmio_read(void *ptr, sf_count_t count, void *user_data);
     sf_count_t awe_sf_vmio_write(const void *ptr, sf_count_t count, void *user_data);
 
-    SF_VIRTUAL_IO awe_sf_vmio { awe_sf_vmio_get_filelen, awe_sf_vmio_seek, awe_sf_vmio_read, awe_sf_vmio_write, awe_sf_vmio_tell };
+    SF_VIRTUAL_IO awe_sf_vmio = { awe_sf_vmio_get_filelen, awe_sf_vmio_seek, awe_sf_vmio_read, awe_sf_vmio_write, awe_sf_vmio_tell };
 
     class Asample;
     void read_sndfile(Asample* sample, SNDFILE* SFsndfile, SF_INFO* info);
