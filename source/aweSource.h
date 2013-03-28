@@ -13,7 +13,8 @@ namespace awe {
         protected:
              
         public:
-            virtual bool is_active () const = 0;
+            virtual bool isActive () const = 0;
+
             /**
              * Render function.
              */

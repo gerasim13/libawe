@@ -25,7 +25,7 @@ namespace awe {
             /**
              * Default constructor
              */
-            Asample (AiBuffer* const &_source, const Afloat &_peak, const unsigned &_rate, const std::string &_name = "Unnamed sample", const Aloop::Mode &_loop = Aloop::Mode::__DEFAULT) :
+            Asample(AiBuffer* const &_source, const Afloat &_peak, const unsigned &_rate, const std::string &_name = "Unnamed sample", const Aloop::Mode &_loop = Aloop::Mode::__DEFAULT) :
                 Asource     (),
                 source      (_source),
                 sourcePeak  (_peak),
@@ -36,38 +36,44 @@ namespace awe {
                 }
 
             /**
-             * Load from file constructor.
-             * This function blocks execution and leaves source as nullptr if it fails to load the sample from file.
+             * Load from file constructor. [definition at awesndfile.cpp]
+             * This function blocks execution and leaves source as nullptr if
+             * it fails to load the sample from file.
              */
-            Asample (const std::string &file, const Aloop::Mode &_loop = Aloop::Mode::__DEFAULT);
+            Asample(const std::string &file, const Aloop::Mode &_loop = Aloop::Mode::__DEFAULT);
 
             /**
-             * Load from memory constructor.
-             * This function blocks execution and leaves source as nullptr if it fails to load the sample from memory.
+             * Load from memory constructor. [definition at awesndfile.cpp]
+             * This function blocks execution and leaves source as nullptr if
+             * it fails to load the sample from memory.
              */
-            Asample (char* mptr, const size_t &size, const std::string &_name = "Unnamed sample", const Aloop::Mode &_loop = Aloop::Mode::__DEFAULT);
+            Asample(char* mptr, const size_t &size, const std::string &_name = "Unnamed sample", const Aloop::Mode &_loop = Aloop::Mode::__DEFAULT);
+            
+            inline AiBuffer    *  getSource() { return source; }
+            inline AschMixer   *  getMixer () { return &mixer; }
+            inline       double   getPos   () const { return loop.now; }
+            inline const double& cgetPos   () const { return loop.now; }
+            
+            inline void setPos(const double &_pos) { loop.now = _pos; } 
+            
+            /**
+             * Sets up the source buffer of this sample. This method will only
+             * work when source == nullptr.
+             * @returns false if source != nullptr.
+             */
+            bool setup_source(AiBuffer* const _source, Afloat const &_peak, unsigned int const &_rate);
+            
+            /** @todo fixme as I don't seem to work
+             * Changes the current playing position to pos.
+             * @param skip_silence set to true to skip through silent frames
+             *                     following the sample after pos
+             * @return current frame position
+             */
+            size_t skip(size_t pos, bool skip_silence = false);
 
-            inline bool setSource (AiBuffer* const _source, const Afloat &_peak, const unsigned &_rate)
-            {
-                if (source == nullptr) {
-                    source     = _source;
-                    sourcePeak = _peak;
-                    sampleRate = _rate;
-                    loop.end   = _source->getFrameCount();
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-            inline AiBuffer * getSource () { return source; }
-            inline AschMixer* getMixer  () { return &mixer; }
-            inline const double& getPos () const { return loop.now; }
-            inline void setPos (const double &_pos) { loop.now = _pos; } 
-
-            // Asource pure function definition.
-            virtual bool is_active () const;
-            virtual void render (AfBuffer &buffer, const ArenderConfig &config);
-            virtual void drop () { delete source; source = nullptr; }
+            virtual bool isActive() const { return !loop.paused; }
+            virtual void render(AfBuffer &buffer, const ArenderConfig &config);
+            virtual void drop() { delete source; source = nullptr; }
     };
 
 }

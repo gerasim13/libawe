@@ -38,7 +38,7 @@ namespace awe {
                 size_t count = 0;
                 for(Asource* source : pool_sources)
                 {
-                    if (source->is_active() == true)
+                    if (source->isActive() == true)
                         count++;
                 }
 
@@ -66,7 +66,7 @@ namespace awe {
                 output_buffer.reset(true);
                 output_buffer.swap(pool_buffer);
 
-                mixer(output_buffer.begin(), output_buffer.end(), 2);
+                mixer.mix(output_buffer.begin(), output_buffer.end(), 2);
             }
 
             inline void push(AfFIFOBuffer &queue) const

@@ -7,7 +7,7 @@
 
 using namespace awe;
 
-int main (int argc, char **argv)
+int main (int argc, char**argv)
 {
     /* Number of frames to update per loop.
      * Anything above 2048 should be fine on most systems.
@@ -19,7 +19,7 @@ int main (int argc, char **argv)
 #endif
 
     /* Playing speed, done using linear resampling */
-    float playSpeed = 1.0f; 
+    float playSpeed = 1.0f;
 
     /* Process arguments */
     switch (argc) {
@@ -41,7 +41,7 @@ int main (int argc, char **argv)
     frameCount = (frameCount < 128) ? 128 : frameCount; /* Minimum of 128 frames per update */
 
     /*- Start engine -*/
-    AEngine* engine = new AEngine (44100, frameCount);
+    AEngine* engine = new AEngine (48000, frameCount);
 
     /*- Open file -*/
     Asample* smp = new Asample(argv[1]);
@@ -51,16 +51,9 @@ int main (int argc, char **argv)
         return 0;
     }
 
+    smp->skip(0, true); // skip through silence at the beginning
     engine->getMasterTrack().attach_source(smp);
-
-#if 0
-    /*- Play source directly into Master Output Track -*/
-    Asound* src = new Asound(smp, 1.0f, 0.0f, 1.0f, playSpeed);
-    engine->getMasterTrack()->attachSource(src);
-
-    src->skipTo(0, true);   // skip through silence at the beginning
-    src->setState(RUNNING); // play
-#endif
+    
     /*- Main loop -*/
     while (engine->getMasterTrack().count_active_sources() != 0)
     {
@@ -72,10 +65,10 @@ int main (int argc, char **argv)
             Asfloatf wvSum = { .0f, .0f }; // Waveform
 #else
             /* MSVC2012 does not have initializer lists, so you have to do it this way. */
-           
-            Asfloatf wvSum;
-            wvSum[0] = .0f;
-            wvSum[1] = .0f;
+            Asfloatf wvAvg;
+            Asfloatf wvMax;
+            wvAvg[0] = wvAvg[1] = .0f;
+            wvMax[0] = wvMax[0] = .0f;
 #endif
             const AfBuffer& output = engine->getMasterTrack().cgetOutput();
 
@@ -83,23 +76,25 @@ int main (int argc, char **argv)
             {
                 Asfloatf wvVol = output.getFrame(t);
                 wvVol.abs();
-                wvVol *= 10.0f;
-                wvSum += wvVol;
+                wvAvg += wvVol;
+                wvMax[0] = std::max(wvVol[0], wvMax[0]);
+                wvMax[1] = std::max(wvVol[1], wvMax[1]);
             }
 
-            wvSum /= frameCount;
-            wvSum *= 3.14159265f;
+            wvAvg /= frameCount;
+            wvAvg *= 8.0f * 3.14159265f;
+            wvMax *= 8.0f * 3.14159265f;
 
             char wvM[17]; wvM[16] = 0; // Waveform, left
             char wvN[17]; wvN[16] = 0; // Waveform, right
 
             for (int i=0; i<16; i++)
                 wvM[15-i] =
-                    (wvSum[0]-i)? ((wvSum[0]-i<0)? ' ' : '-') : '*'; 
+                    (wvMax[0]-i > 0) ? ((wvAvg[0]-i > 0) ? '<' : '=') : ' ';
+                    
             for (int i=0; i<16; i++)
                 wvN[i] =
-                    (wvSum[1]-i)? ((wvSum[1]-i<0)? ' ' : '-') : '*'; 
-
+                    (wvMax[1]-i > 0) ? ((wvAvg[1]-i > 0) ? '>' : '=') : ' ';
 
             printf ("%s+%s\n", wvM, wvN);
         }

@@ -2,6 +2,28 @@
 
 using namespace awe;
 
+bool Asample::setup_source(AiBuffer* const _source, Afloat const &_peak, unsigned int const &_rate)
+{
+    if (source == nullptr) {
+        source     = _source;
+        sourcePeak = _peak;
+        sampleRate = _rate;
+        loop.end   = _source->getFrameCount();
+        return true;
+    } else {
+        return false;
+    }
+}
+
+size_t Asample::skip(size_t pos, bool skip_silence)
+{
+    if(skip_silence)
+        while(source->getSample(pos) != 0 && pos < loop.uend())
+            ++pos;
+
+    loop.now = pos / 2;
+}
+
 void Asample::render (AfBuffer &buffer, const ArenderConfig &config)
 {
     if (source == nullptr) return;
@@ -32,16 +54,11 @@ void Asample::render (AfBuffer &buffer, const ArenderConfig &config)
                 to_Afloat(source->getSample(z * source->getChannelCount() + 1))
                 }} );
 #endif
-        mixer(frame);
+        mixer.mix(frame);
 
         buffer.at(i*2  ) += frame.data[0];
         buffer.at(i*2+1) += frame.data[1];
 
         if (loop += move_rate) return;
     }
-}
-
-bool Asample::is_active () const
-{
-    return !loop.paused;
 }

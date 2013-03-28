@@ -5,7 +5,7 @@
 
 namespace awe {
 
-    static int PaCallback (
+    static int pa_callback (
             const void *inputBuffer, void *outputBuffer,
             unsigned long framesPerBuffer,
             const PaStreamCallbackTimeInfo* timeInfo,
@@ -73,7 +73,7 @@ namespace awe {
                 &pa_outstream, NULL,        /* One output stream, No input. */
                 &pa_outstream_params,       /* Output parameters.*/
                 sample_rate, frame_rate,    /* Sample rate, Frames per buffer. */
-                paPrimeOutputBuffersUsingStreamCallback, PaCallback,
+                paPrimeOutputBuffersUsingStreamCallback, pa_callback,
                 &pa_packet
                 );
         if (test_error()) return false;
@@ -95,12 +95,12 @@ namespace awe {
         return false;
     }
 
-    unsigned short int APortAudio::fplay (const AfBuffer& buffer)
+    void APortAudio::push (const AfBuffer& buffer)
     {
 #ifdef AWE_CATCH_OUTPUT_OVERCLIPS
         unsigned int overclips = 0;
 
-        for (unsigned int i=0; i<frame_rate*2; i++)
+        for(unsigned int i=0; i<frame_rate*2; i++)
         {
             Afloat smp = buffer.getSample(i);
 
@@ -114,13 +114,11 @@ namespace awe {
         if (overclips > 0)
             fprintf (stdout, "PortAudio [warn] %u overclip(s) on last update.\n", overclips);
 #else
-        std::copy(
-                output_buffer.begin(),
-                output_buffer.end(),
-                std::back_inserter(queue)
-                );
+        for(const Afloat& smp : buffer)
+            output_queue.push(smp);
 #endif
 
+        // @todo Move this away...
 #ifdef AWE_CATCH_OUTPUT_UNDERFLOW
         if (pa_packet.underflows != 0)
             fprintf (stdout, "PortAudio [warn] %u device underflows(s) on last update.\n", pa_packet.underflows);
@@ -130,8 +128,6 @@ namespace awe {
         pa_packet.calls = 0;
         pa_packet.underflows = 0;
 #endif
-
-        return 0;
     }
 
     void APortAudio::shutdown ()

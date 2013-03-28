@@ -15,7 +15,7 @@ namespace awe {
         sf_readf_float(sndf, buff->data(), info->frames);
 
         // Find peak sample value in file.
-        double peakValue;
+        Afloat peakValue;
 
 #ifdef AWE_USE_CXX11
         // C++11 solution, but leads to popping sounds.
@@ -33,8 +33,8 @@ namespace awe {
             peakValue = 1.0;
 
             for (const Afloat &x : *buff) {
-                if (fabs(x) > peakValue)
-                    peakValue = fabs(x);
+                if (std::fabs(x) > peakValue)
+                    peakValue = std::fabs(x);
             }
         }
 #endif
@@ -45,7 +45,7 @@ namespace awe {
         }
 
         // Save buffer into sample, clean up and return
-        sample->setSource(bufi, peakValue, info->samplerate);
+        sample->setup_source(bufi, peakValue, info->samplerate);
 
         delete buff;
         sf_close(sndf);

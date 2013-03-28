@@ -15,12 +15,16 @@
 namespace awe
 {
     /**
-     * Stereo channel mixer, for mixing gain and panning.
+     * Stereo channel mixer, for gain and panning.
      */
-    struct AschMixer
+    class AschMixer
     {
-        Afloat      vol, pan;
-        Asfloatf    chgain;
+    private:
+        Afloat      vol;    /** volume gain ratio */
+        Afloat      pan;    /** stereo panoramization */
+
+    public:
+        Asfloatf    chgain; /** channel volume gain */
 
         AschMixer(const Afloat& vol = 1.0f, const Afloat& pan = 0.0f) :
             vol(vol),
@@ -32,31 +36,37 @@ namespace awe
             chgain[0] = std::log10((chgain[0]*9.0f)+1.0f) * vol;
             chgain[1] = std::log10((chgain[1]*9.0f)+1.0f) * vol;
         }
+        
+        inline Afloat getVol() const { return vol; }
+        inline Afloat getPan() const { return pan; }
 
         inline void setVol(const Afloat &_vol) { AschMixer(_vol, pan); }
         inline void setPan(const Afloat &_pan) { AschMixer(vol, _pan); }
 
-        inline void operator()(Asintf& f) const
+        inline void mix(Asintf& f) const
         {
             f.data[0] = to_Aint(to_Afloat(f.data[0]) * chgain[0]);
             f.data[1] = to_Aint(to_Afloat(f.data[1]) * chgain[1]);
         }
 
-        inline void operator()(Asfloatf& f) const
+        inline void mix(Asfloatf& f) const
         {
             f *= chgain;
         }
 
         // C++ iterator template magic.
-        // Apply on all stereo samples from begin to end.
+        /**
+         * Apply stereo mixer on all samples iterating from begin to end.
+         */
         template <typename Iterator>
-            inline void operator()(
+            inline void mix(
                     Iterator begin,
                     Iterator end,
                     const std::uint8_t channels
                     ) const
             {
                 assert(channels >= 2 && "AschMixer accepting iterator input requires at least two channels per frame.");
+
                 if (std::numeric_limits< typename std::iterator_traits<Iterator>::value_type >::is_integer)
                 {
                     for (auto iter = begin; iter != end; iter += channels)
@@ -75,7 +85,7 @@ namespace awe
 
         // Overdub-mixing. Only works on iterators.
         template <typename InputIt, typename OutputIt>
-            inline void operator()(
+            inline void mix(
                     InputIt sbegin,
                     InputIt send,
                     OutputIt dbegin,
@@ -85,7 +95,6 @@ namespace awe
             {
                 assert(schannels >= 2 && "AschMixer accepting iterator input requires at least two channels per frame.");
                 assert(dchannels >= 2 && "Iterator accepting AschMixer output requires at least two channels per frame.");
-
 
                 auto siter = sbegin;
                 auto diter = dbegin;

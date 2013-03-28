@@ -24,9 +24,9 @@ namespace awe {
             AEngine(size_t output_sample_rate = 48000, size_t output_frame_rate = 4096) :
                 output_device(),
                 master_output(output_sample_rate, output_frame_rate)
-        {
-            assert(output_device.init(output_sample_rate, output_frame_rate));
-        }
+            {
+                assert(output_device.init(output_sample_rate, output_frame_rate));
+            }
 
             inline Atrack& getMasterTrack() { return master_output; }
             
@@ -40,9 +40,9 @@ namespace awe {
                     master_output.flip();
 
                     // Push to output device buffer
-                    output_device.getFIFOBuffer_mutex().lock();
+                    output_device.getFIFOBufferMutex().lock();
                     master_output.push(output_device.getFIFOBuffer());
-                    output_device.getFIFOBuffer_mutex().unlock();
+                    output_device.getFIFOBufferMutex().unlock();
 
                     return true;
                 } else {

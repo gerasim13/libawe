@@ -21,12 +21,12 @@ namespace awe
     typedef std::queue<Aint  > AiFIFOBuffer;
     
 #define IO_BUFFER_SIZE  16384   /** File IO buffer size */
-#define FI_FACTOR       32768.0 /** Afloat to Aint convertion factor */ 
+#define FI_FACTOR       32768   /** Afloat to Aint convertion factor */ 
 
     /** @return Afloat equivalent of Aint */
     inline Afloat to_Afloat (const Aint &v)
     {
-        return static_cast<Afloat>(v) / FI_FACTOR;
+        return static_cast<Afloat>(v) / static_cast<Afloat>(FI_FACTOR);
     }
 
     /** @return Aint equivalent of Afloat */
