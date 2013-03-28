@@ -20,5 +20,6 @@ test/
 build/msvc/Debug/
 build/msvc/Release/
 build/msvc/x64/
+*.opensdf
 *.sdf
 *.suo
