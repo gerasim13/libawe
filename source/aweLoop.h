@@ -1,10 +1,12 @@
-//  aweLoop.h :: Loopable object definition
+//  aweLoop.h :: Looping sequence object
 //  Copyright 2012 - 2013 Keigen Shu
 
 #ifndef AWE_LOOP_H
 #define AWE_LOOP_H
 
+#include <algorithm>
 #include <cstdint>
+#include <cmath>
 
 namespace awe {
 
@@ -48,13 +50,15 @@ namespace awe {
             inline bool operator-= (const double &b) { return operator+=(-b); }
 
             /* cast to unsigned integer */
-            inline unsigned long long  ubegin () const { return static_cast<unsigned long long>(begin); }
-            inline unsigned long long  unow   () const { return static_cast<unsigned long long>(now); }
-            inline unsigned long long  uend   () const { return static_cast<unsigned long long>(end); }
-
-            /* cast to unsigned integer with loop boundary checking */
-            inline unsigned long long sunow   () const { return unow() < uend() ? unow() : uend() - 1; }
-            inline unsigned long long suend   () const { return uend() - 1; }
+            inline unsigned long ubegin () const { return std::floor(begin); }
+            inline unsigned long uend   () const { return std::floor(end); }
+            inline unsigned long unow   () const {
+                // DO NOT TOUCH :: THIS MESS FIXES ANNOYING PULSES AT END OF SOUND RENDER
+                return std::min<unsigned long>(now, uend() - 1);
+            }
+            
+            inline double getPosition() const { return now / end; }
+            inline double getProgress() const { return now / (end - begin); }
     };
    
     inline static std::uint8_t operator* (const Aloop::Mode&  mode) { return static_cast<std::uint8_t>(mode); }

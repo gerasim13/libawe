@@ -36,16 +36,14 @@ namespace awe {
             bool test_error() const;
 
         public:
-            inline unsigned char paCalls           () const { return pa_packet.calls; }
-            inline double        paStreamCPULoad   () const { return Pa_GetStreamCpuLoad(pa_outstream); }
-            inline double        paStreamTime      () const { return Pa_GetStreamTime   (pa_outstream); }
-            inline AfFIFOBuffer& getFIFOBuffer     ()       { return output_queue; }
-            inline std::mutex  & getFIFOBufferMutex()       { return output_mutex; }
+            inline unsigned char pa_calls           () const { return pa_packet.calls; }
+            inline double        pa_stream_cpu_load () const { return Pa_GetStreamCpuLoad(pa_outstream); }
+            inline double        pa_stream_time     () const { return Pa_GetStreamTime   (pa_outstream); }
+            inline AfFIFOBuffer& getFIFOBuffer      ()       { return output_queue; }
+            inline std::mutex  & getFIFOBuffer_mutex()       { return output_mutex; }
 
-            /**
-             * Copy and queues all samples from the buffer into output_queue.
-             */
-            void push(const AfBuffer& buffer);
+            //! Plays provided buffer. @returns underruns since last play.
+            unsigned short int fplay(const AfBuffer& buffer);
 
             bool init(const unsigned int output_sample_rate, const unsigned int output_buffer_frame_count);
             void shutdown();

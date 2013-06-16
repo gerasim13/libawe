@@ -9,14 +9,23 @@
 
 namespace awe {
 
-    class Asource {
-        protected:
-             
+    class Asource
+    {
         public:
-            virtual bool isActive () const = 0;
+            virtual ~Asource() {}
 
             /**
-             * Render function.
+             * Make this thing into an active sound source.
+             */
+            virtual void make_active (void* userData = nullptr) = 0;
+            
+            /**
+             * Is this thing activated?
+             */
+            virtual bool is_active () const = 0;
+
+            /**
+             * Render function used by the Atrack class.
              */
             virtual void render (AfBuffer &targetBuffer, const ArenderConfig &targetConfig) = 0;
 

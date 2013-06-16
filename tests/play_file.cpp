@@ -62,11 +62,15 @@ int main (int argc, char**argv)
         } else {
             /*- Console Visualization -*/
 #ifndef _MSC_VER
-            Asfloatf wvSum = { .0f, .0f }; // Waveform
+            Asfloatf wvSum {{ .0f, .0f }}; // Waveform
+            Asfloatf wvAvg {{ .0f, .0f }};
+            Asfloatf wvMax {{ .0f, .0f }};
 #else
             /* MSVC2012 does not have initializer lists, so you have to do it this way. */
+            Asfloatf wvSum;
             Asfloatf wvAvg;
             Asfloatf wvMax;
+            wvSum[0] = wvSum[1] = .0f;
             wvAvg[0] = wvAvg[1] = .0f;
             wvMax[0] = wvMax[0] = .0f;
 #endif

@@ -2,28 +2,6 @@
 
 using namespace awe;
 
-bool Asample::setup_source(AiBuffer* const _source, Afloat const &_peak, unsigned int const &_rate)
-{
-    if (source == nullptr) {
-        source     = _source;
-        sourcePeak = _peak;
-        sampleRate = _rate;
-        loop.end   = _source->getFrameCount();
-        return true;
-    } else {
-        return false;
-    }
-}
-
-size_t Asample::skip(size_t pos, bool skip_silence)
-{
-    if(skip_silence)
-        while(source->getSample(pos) != 0 && pos < loop.uend())
-            ++pos;
-
-    loop.now = pos / 2;
-}
-
 void Asample::render (AfBuffer &buffer, const ArenderConfig &config)
 {
     if (source == nullptr) return;
@@ -37,28 +15,36 @@ void Asample::render (AfBuffer &buffer, const ArenderConfig &config)
         return;
     }
 
-    for(size_t i = config.targetFrameOffset; i < config.targetFrameOffset + config.targetFrameCount; i++)
+    if (source->getChannelCount() > 1)
     {
-        const unsigned long long z = loop.sunow();
-#ifdef _MSC_VER
-        // Incomplete C++11 implementation in VS2012
-        Asfloatf::data_type fdata = {
-            to_Afloat(source->getSample(z * source->getChannelCount()    )),
-            to_Afloat(source->getSample(z * source->getChannelCount() + 1))
-        };
-
-        Asfloatf frame(fdata);
-#else
-        Asfloatf frame ( Asfloatf::data_type {{
-                to_Afloat(source->getSample(z * source->getChannelCount()    )),
-                to_Afloat(source->getSample(z * source->getChannelCount() + 1))
-                }} );
-#endif
-        mixer.mix(frame);
-
-        buffer.at(i*2  ) += frame.data[0];
-        buffer.at(i*2+1) += frame.data[1];
-
-        if (loop += move_rate) return;
+        for(size_t i = config.targetFrameOffset; i < config.targetFrameOffset + config.targetFrameCount; i++)
+        {
+            const unsigned long z = loop.unow() * source->getChannelCount();
+            buffer.data()[i*2  ] += mixer.ifdoL(*(source->cdata()+z  ));
+            buffer.data()[i*2+1] += mixer.ifdoR(*(source->cdata()+z+1));
+            if (loop += move_rate) return;
+        }
+    } else if (source->getChannelCount() == 1) {
+        for(size_t i = config.targetFrameOffset; i < config.targetFrameOffset + config.targetFrameCount; i++)
+        {
+            const unsigned long z = loop.unow();
+            buffer.data()[i*2  ] += mixer.ifdoL(*(source->cdata()+z));
+            buffer.data()[i*2+1] += mixer.ifdoR(*(source->cdata()+z));
+            if (loop += move_rate) return;
+        }
     }
+}
+
+size_t Asample::skip(const size_t &pos, const bool &skip_silence)
+{
+    size_t i = pos > loop.uend() ? loop.uend() : pos;
+    size_t j = 0;
+
+    if (skip_silence == true)
+        for(; source->getSample(i) != 0 && i < loop.uend(); ++j)
+            ++ i;
+
+    loop.now = i / source->getChannelCount();
+
+    return j;
 }

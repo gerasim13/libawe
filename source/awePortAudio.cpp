@@ -5,7 +5,7 @@
 
 namespace awe {
 
-    static int pa_callback (
+    static int PaCallback (
             const void *inputBuffer, void *outputBuffer,
             unsigned long framesPerBuffer,
             const PaStreamCallbackTimeInfo* timeInfo,
@@ -26,12 +26,10 @@ namespace awe {
         /* Library failed to update sooner. */
         if (data->output->size() < framesPerBuffer * 2)
         {
-#ifdef AWE_CATCH_OUTPUT_UNDERRUNS
             for (unsigned int i=0; i<framesPerBuffer; i++) {
                 *out++ = 0;
                 *out++ = 0;
             }
-#endif
         } else {
             data->mutex->lock();
             for (unsigned int i=0; i<framesPerBuffer; i++) {
@@ -73,7 +71,7 @@ namespace awe {
                 &pa_outstream, NULL,        /* One output stream, No input. */
                 &pa_outstream_params,       /* Output parameters.*/
                 sample_rate, frame_rate,    /* Sample rate, Frames per buffer. */
-                paPrimeOutputBuffersUsingStreamCallback, pa_callback,
+                paPrimeOutputBuffersUsingStreamCallback, PaCallback,
                 &pa_packet
                 );
         if (test_error()) return false;
@@ -95,31 +93,13 @@ namespace awe {
         return false;
     }
 
-    void APortAudio::push (const AfBuffer& buffer)
+    unsigned short int APortAudio::fplay (const AfBuffer& buffer)
     {
-#ifdef AWE_CATCH_OUTPUT_OVERCLIPS
-        unsigned int overclips = 0;
+        output_mutex.lock();
 
-        for(unsigned int i=0; i<frame_rate*2; i++)
-        {
-            Afloat smp = buffer.getSample(i);
-
-            if (smp != smp) { smp = 0.0; }
-            else if (smp >  1.0) { smp =  1.0; overclips++; }
-            else if (smp < -1.0) { smp = -1.0; overclips++; }
-
+        for(Afloat smp : buffer)
             output_queue.push(smp);
-        }
 
-        if (overclips > 0)
-            fprintf (stdout, "PortAudio [warn] %u overclip(s) on last update.\n", overclips);
-#else
-        for(const Afloat& smp : buffer)
-            output_queue.push(smp);
-#endif
-
-        // @todo Move this away...
-#ifdef AWE_CATCH_OUTPUT_UNDERFLOW
         if (pa_packet.underflows != 0)
             fprintf (stdout, "PortAudio [warn] %u device underflows(s) on last update.\n", pa_packet.underflows);
         if (pa_packet.calls > 1)
@@ -127,7 +107,10 @@ namespace awe {
 
         pa_packet.calls = 0;
         pa_packet.underflows = 0;
-#endif
+        
+        output_mutex.unlock();
+
+        return 0;
     }
 
     void APortAudio::shutdown ()

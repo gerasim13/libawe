@@ -2,12 +2,13 @@
 #include "awesndfile.h"
 #include "aweSample.h"
 
+
 namespace awe {
 
     /* read data from SNDFILE into sample */
     void read_sndfile(Asample* sample, SNDFILE* sndf, SF_INFO* info)
     {
-        // Two buffers needed for overclip bug workaround
+        // Second buffer needed for overclip bug workaround
         AiBuffer* bufi = new AiBuffer(info->channels, info->frames, false);
         AfBuffer* buff = new AfBuffer(info->channels, info->frames, true );
 
@@ -15,39 +16,29 @@ namespace awe {
         sf_readf_float(sndf, buff->data(), info->frames);
 
         // Find peak sample value in file.
-        Afloat peakValue;
+        float peakValue;
 
-#ifdef AWE_USE_CXX11
-        // C++11 solution, but leads to popping sounds.
-        if (sf_command(sndf, SFC_GET_SIGNAL_MAX, &peakValue, sizeof(peakValue)) == SF_FALSE)
-        {
-            // Peak value not provided by file, find manually.
-            auto temp = std::minmax_element(buff->begin(), buff->end());
-            peakValue = std::max({ 1.0, fabs(*temp.first), fabs(*temp.second) });
-        }
-#else
-        // Simpler classic solution, possibly slower
         if (sf_command(sndf, SFC_GET_SIGNAL_MAX, &peakValue, sizeof(peakValue)) == SF_FALSE)
         {
             // Peak value not provided by file, calculate ourself.
-            peakValue = 1.0;
+            peakValue = 1.0f;
 
             for (const Afloat &x : *buff) {
                 if (std::fabs(x) > peakValue)
                     peakValue = std::fabs(x);
             }
         }
-#endif
 
         // Fix and copy buffer
         for (const Afloat &x : *buff) {
-            bufi->push_back(to_Aint(x / static_cast<float>(peakValue)));
+            bufi->push_back(to_Aint(x / peakValue));
         }
-
-        // Save buffer into sample, clean up and return
-        sample->setup_source(bufi, peakValue, info->samplerate);
-
+        
         delete buff;
+        
+        // Save buffer into sample, clean up and return
+        sample->setSource(bufi, peakValue, info->samplerate);
+
         sf_close(sndf);
 
         return;
@@ -118,14 +109,16 @@ namespace awe {
     }
 
     // Asample constructors
-    Asample::Asample (const std::string &file, const Aloop::Mode &_loop) :
-        Asource     (),
+    Asample::Asample (
+            const std::string & file,
+            const Aloop::Mode &_loop
+    ) : Asource     (),
         source      (nullptr),
         sourcePeak  (1.0),
         sampleRate  (0),
         sampleName  (file),
-        mixer(1.0, 0.0),
-        loop(0, 0, 0, _loop)
+        mixer       (1.0, 0.0),
+        loop        (0, 0, 0, _loop)
     {
         SF_INFO* info = new SF_INFO;
         SNDFILE* sndf;
@@ -149,14 +142,18 @@ namespace awe {
         return; 
     }
 
-    Asample::Asample (char* mptr, const size_t &size, const std::string &_name, const Aloop::Mode &_loop) :
-        Asource     (),
+    Asample::Asample (
+            char                * mptr, 
+            const size_t        & size,
+            const std::string   &_name,
+            const Aloop::Mode   &_loop
+    ) : Asource     (),
         source      (nullptr),
         sourcePeak  (1.0),
         sampleRate  (0),
         sampleName  (_name),
-        mixer(1.0, 0.0),
-        loop(0, 0, 0, _loop)
+        mixer       (1.0, 0.0),
+        loop        (0, 0, 0, _loop)
     {
         SF_INFO* info = new SF_INFO;
         SNDFILE* sndf;
