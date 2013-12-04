@@ -5,6 +5,7 @@
 #define AWE_FILTER_MIXER_H
 
 #include <cassert>
+#include <cstdint>
 #include "../aweFilter.h"
 
 namespace awe
@@ -31,12 +32,13 @@ public:
     AscMixer(
             Afloat _vol = 1.0f,
             Afloat _pan = 0.0f,
-            IEType type = IEType::LINEAR
-            ) :
-        law(type == IEType::LINEAR ? &xLinear : &xSinCos),
+            IEType type = IEType::SINCOS
+            ) : law(type == IEType::LINEAR ? &xLinear : &xSinCos),
         vol(_vol), pan(_pan),
         chgain(law(_vol, _pan))
         {}
+
+    inline void reset_state() {}
 
     inline void reset(Afloat _vol, Afloat _pan)
     {
@@ -44,6 +46,9 @@ public:
         pan = _pan;
         chgain  = law(_vol, _pan);
     }
+
+    inline Afloat getVol() const { return vol; }
+    inline Afloat getPan() const { return pan; }
 
     inline void setVol(Afloat _vol) { vol = _vol; reset(_vol, pan); }
     inline void setPan(Afloat _pan) { pan = _pan; reset(vol, _pan); }
@@ -80,10 +85,10 @@ public:
 
     inline Asfloatf ffdoF(Asfloatf const &f) { return Asfloatf(f) * chgain; }
     inline Asintf   iidoF(Asintf   const &f) {
-        return Asintf({
-                to_Aint(to_Afloat(f.data[0]) * chgain[0]),
-                to_Aint(to_Afloat(f.data[1]) * chgain[1])
-                });
+        Asintf o;
+        o[0] = to_Aint(to_Afloat(f.data[0]) * chgain[0]);
+        o[1] = to_Aint(to_Afloat(f.data[1]) * chgain[1]);
+        return o;
     }
 
     template <typename Iterator>
@@ -91,8 +96,7 @@ public:
                 Iterator begin,
                 Iterator end,
                 const uint8_t &channels
-                ) const
-        {
+                ) {
             assert(channels >= 2 && "AscMixer accepting iterator input requires at least two channels per frame.");
 
             auto iter = begin;
@@ -113,15 +117,14 @@ public:
             }
         }
 
-    template <typename InputIt, typename OutputIt>
+    template <typename InputIterator, typename OutputIterator>
         inline void cdoI(
-                InputIt sbegin,
-                InputIt send,
-                OutputIt dbegin,
+                InputIterator sbegin,
+                InputIterator send,
+                OutputIterator dbegin,
                 const uint8_t &schannels,
                 const uint8_t &dchannels
-                ) const
-        {
+                ) {
             assert(schannels >= 2 && "AschMixer accepting iterator input requires at least two channels per frame.");
             assert(dchannels >= 2 && "Iterator accepting AscMixer output requires at least two channels per frame.");
 
@@ -129,8 +132,8 @@ public:
             auto diter = dbegin;
 
             if (
-                    std::is_integral< typename std::iterator_traits<InputIt>::value_type >::value &&
-                    std::is_integral< typename std::iterator_traits<OutputIt>::value_type >::value
+                    std::is_integral< typename std::iterator_traits<InputIterator>::value_type >::value &&
+                    std::is_integral< typename std::iterator_traits<OutputIterator>::value_type >::value
                )
             {
                 for (; siter != send; siter += schannels, diter += dchannels)
@@ -139,8 +142,8 @@ public:
                     *(diter+1) = to_Aint(to_Afloat(*(siter+1)) * chgain[1]);
                 }
             } else if (
-                    std::is_integral      < typename std::iterator_traits<InputIt>::value_type >::value &&
-                    std::is_floating_point< typename std::iterator_traits<OutputIt>::value_type >::value
+                    std::is_integral      < typename std::iterator_traits<InputIterator>::value_type >::value &&
+                    std::is_floating_point< typename std::iterator_traits<OutputIterator>::value_type >::value
                     )
             {
                 for (; siter != send; siter += schannels, diter += dchannels)
@@ -149,8 +152,8 @@ public:
                     *(diter+1) = to_Afloat(*(siter+1)) * chgain[1];
                 }
             } else if (
-                    std::is_floating_point< typename std::iterator_traits<InputIt>::value_type >::value &&
-                    std::is_integral      < typename std::iterator_traits<OutputIt>::value_type >::value
+                    std::is_floating_point< typename std::iterator_traits<InputIterator>::value_type >::value &&
+                    std::is_integral      < typename std::iterator_traits<OutputIterator>::value_type >::value
                     )
             {
                 for (; siter != send; siter += schannels, diter += dchannels)

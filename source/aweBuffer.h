@@ -1,4 +1,4 @@
-//  aweBuffer.h :: Buffer container template
+//  aweBuffer.h :: Data container template definition
 //  Copyright 2012 - 2013 Keigen Shu
 
 #ifndef AWE_BUFFER_H
@@ -9,6 +9,9 @@
 
 namespace awe {
 
+/** Audio data container class.
+ * This class is used to contain PCM audio data.
+ */
 template <typename T> class Abuffer
 {
 private:
@@ -16,7 +19,7 @@ private:
     const unsigned char channels;
 
 public:
-    /* derive std::vector */
+    /* Derive useful std::vector types and functions */
     typedef typename std::vector<T>                     container_type;
     typedef typename container_type::value_type         value_type;
     typedef typename container_type::size_type          size_type;
@@ -62,7 +65,8 @@ public:
      * @param _init     initialze samples in container or leave it empty?
      */
     Abuffer(unsigned char _channels, size_type _frames, bool init = true) :
-        pcm_data(), channels(_channels)
+        pcm_data(),
+        channels(_channels)
         {
             assert(channels != 0);
 
@@ -75,11 +79,11 @@ public:
         }
 
     Abuffer(const Abuffer &buffer) :
-        pcm_data(buffer.cvector()), channels(buffer.getChannelCount())
+        pcm_data(buffer.cvector()),
+        channels(buffer.getChannelCount())
         {}
 
-
-    ~Abuffer () { pcm_data.clear(); }
+    ~Abuffer() { pcm_data.clear(); }
 
 
     inline void reset(bool init = true)

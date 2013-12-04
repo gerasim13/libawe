@@ -8,7 +8,8 @@
 
 namespace awe {
 
-/* PortAudio object to communicate to the audio device. */
+/** PortAudio class to handle communication with audio device.
+ */
 class APortAudio
 {
 public:
@@ -18,29 +19,28 @@ public:
         unsigned char   calls;      // Number of times PA ran this callback since last update.
         unsigned char   underflows; // Number of times PA reported underflow problems since last update.
     };
+
 private:
-    PaError             pa_error;
+    PaError             mPAerror;
+    PaStream          * mPAostream;
+    PaStreamParameters  mPAostream_params;
+    PaCallbackPacket    mPApacket;
 
-    PaStream          * pa_outstream;
-    PaStreamParameters  pa_outstream_params;
+    AfFIFOBuffer        mOutputQueue;
+    std::mutex          mOutputMutex;
 
-    PaCallbackPacket    pa_packet;
-
-    AfFIFOBuffer    output_queue;
-    std::mutex      output_mutex;
-
-    unsigned int    sample_rate;
-    unsigned int    frame_rate;
+    unsigned int    mSampleRate;
+    unsigned int    mFrameRate;
 
     //! Checks if PortAudio has an error
     bool test_error() const;
 
 public:
-    inline unsigned char pa_calls           () const { return pa_packet.calls; }
-    inline double        pa_stream_cpu_load () const { return Pa_GetStreamCpuLoad(pa_outstream); }
-    inline double        pa_stream_time     () const { return Pa_GetStreamTime   (pa_outstream); }
-    inline AfFIFOBuffer& getFIFOBuffer      ()       { return output_queue; }
-    inline std::mutex  & getFIFOBuffer_mutex()       { return output_mutex; }
+    inline unsigned char pa_calls           () const { return mPApacket.calls; }
+    inline double        pa_stream_cpu_load () const { return Pa_GetStreamCpuLoad(mPAostream); }
+    inline double        pa_stream_time     () const { return Pa_GetStreamTime   (mPAostream); }
+    inline AfFIFOBuffer& getFIFOBuffer      ()       { return mOutputQueue; }
+    inline std::mutex  & getFIFOBuffer_mutex()       { return mOutputMutex; }
 
     //! Plays provided buffer. @returns underruns since last play.
     unsigned short int fplay(const AfBuffer& buffer);

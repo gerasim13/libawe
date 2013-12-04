@@ -1,30 +1,42 @@
+//  aweLoop.cpp :: Looping sequence object
+//  Copyright 2012 - 2013 Keigen Shu
+
 #include <stdexcept>
 #include <sstream>
 #include <bitset>
 
 #include "aweLoop.h"
 
-namespace awe {
+namespace awe
+{
 
-Aloop::Aloop (const double &_begin, const double &_end, const Aloop::Mode &_mode, const bool startPaused) :
+Aloop::Aloop(
+        const double &_begin,
+        const double &_end,
+        const Aloop::Mode &_mode,
+        const bool _startPaused
+        ) :
     mode    (_mode),
-    paused  (startPaused),
+    paused  (_startPaused),
     begin   (_begin),
     now     (isReverse(_mode) ? _end : _begin),
     end     (_end)
-    {
-    }
+    { }
 
-Aloop::Aloop (const double &_begin, const double &_now, const double &_end, const Aloop::Mode &_mode, const bool startPaused) :
+Aloop::Aloop(
+        const double &_begin,
+        const double &_now,
+        const double &_end,
+        const Aloop::Mode &_mode,
+        const bool _startPaused
+        ) :
     mode    (_mode),
-    paused  (startPaused),
+    paused  (_startPaused),
     begin   (_begin),
     now     (_now),
     end     (_end)
-{
-}
+    { }
 
-// Move current position by b
 bool Aloop::operator+= (const double &b)
 {
     if (paused) return true;
@@ -32,7 +44,9 @@ bool Aloop::operator+= (const double &b)
     switch (getMethod(mode))
     {
         case Aloop::Mode::UNDEFINED:
-            // Warn undefined loop mode
+#ifdef DEBUG
+            printf("libawe [warn] Undefined loop mode on object %p.\n", this);
+#endif
         case Aloop::Mode::ONCE:
             if (isForward(mode)) {
                 now += b;
@@ -47,7 +61,6 @@ bool Aloop::operator+= (const double &b)
                     paused = true;
                 }
             }
-
             break;
 
         case Aloop::Mode::REPEAT:
@@ -88,4 +101,4 @@ bool Aloop::operator+= (const double &b)
     return false;
 }
 
-} // namespace awe
+}

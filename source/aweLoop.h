@@ -10,13 +10,12 @@
 
 namespace awe {
 
-/**
- * Aloop namespace/object.
+/** Class managing sequence progression.
  */
 class Aloop
 {
 public:
-    /** Loop mode enumerator and operators */
+    /** Aloop mode enumerator and operators */
     enum class Mode : std::uint8_t {
         // First two bits is the loop method
         UNDEFINED   = 0x0,
@@ -42,10 +41,10 @@ public:
     bool   paused;
     double begin, now, end;
 
-    Aloop (const double &_begin, const double &_end, const Aloop::Mode &_mode, const bool startPaused = false);
-    Aloop (const double &_begin, const double &_end, const double &_now, const Aloop::Mode &_mode, const bool startPaused = false);
+    Aloop(const double &_begin, const double &_end, const Aloop::Mode &_mode, const bool startPaused = false);
+    Aloop(const double &_begin, const double &_end, const double &_now, const Aloop::Mode &_mode, const bool startPaused = false);
 
-    /* Move current position by b */
+    /* Move current position by 'b' */
     bool operator+= (const double &b);
     inline bool operator-= (const double &b) { return operator+=(-b); }
 

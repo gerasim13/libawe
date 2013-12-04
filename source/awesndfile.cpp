@@ -3,7 +3,8 @@
 #include "aweSample.h"
 
 
-namespace awe {
+namespace awe
+{
 
 /* read data from SNDFILE into sample */
 void read_sndfile(Asample* sample, SNDFILE* sndf, SF_INFO* info)
@@ -109,17 +110,17 @@ sf_count_t awe_sf_vmio_write(const void *ptr, sf_count_t count, void *user_data)
 }
 
 // Asample constructors
-Asample::Asample (
+Asample::Asample(
         const std::string & file,
         const Aloop::Mode &_loop
         ) :
-    Asource     (),
-    source      (nullptr),
-    sourcePeak  (1.0),
-    sampleRate  (0),
-    sampleName  (file),
-    mixer       (1.0, 0.0),
-    loop        (0, 0, 0, _loop)
+    Asource(),
+    mSource(nullptr),
+    mSourcePeak(1.0),
+    mSampleRate(0),
+    mSampleName(file),
+    mMixer(1.0, 0.0),
+    mLoop(0, 0, 0, _loop)
 {
     SF_INFO* info = new SF_INFO;
     SNDFILE* sndf;
@@ -143,19 +144,19 @@ Asample::Asample (
     return;
 }
 
-Asample::Asample (
-        char                * mptr,
-        const size_t        & size,
-        const std::string   &_name,
-        const Aloop::Mode   &_loop
+Asample::Asample(
+        char              * mptr,
+        const size_t      & size,
+        const std::string &_name,
+        const Aloop::Mode &_loop
         ) :
-    Asource     (),
-    source      (nullptr),
-    sourcePeak  (1.0),
-    sampleRate  (0),
-    sampleName  (_name),
-    mixer       (1.0, 0.0),
-    loop        (0, 0, 0, _loop)
+    Asource(),
+    mSource(nullptr),
+    mSourcePeak(1.0),
+    mSampleRate(0),
+    mSampleName(_name),
+    mMixer(1.0, 0.0),
+    mLoop(0, 0, 0, _loop)
 {
     SF_INFO* info = new SF_INFO;
     SNDFILE* sndf;
@@ -179,4 +180,5 @@ Asample::Asample (
 
     return;
 }
-};
+
+}

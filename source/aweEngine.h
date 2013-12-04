@@ -9,44 +9,46 @@
 
 namespace awe {
 
+/** Master output engine.
+ * This class manages the audio output to an audio output library.
+ */
 class AEngine
 {
 protected:
-    APortAudio  output_device;
-    Atrack      master_output;
+    APortAudio  mOutputDevice;
+    Atrack      mMasterTrack;
 
 public:
     AEngine(size_t output_sample_rate = 48000, size_t output_frame_rate = 4096) :
-        output_device(),
-        master_output(output_sample_rate, output_frame_rate, "Output to Device")
+        mOutputDevice(),
+        mMasterTrack (output_sample_rate, output_frame_rate, "Output to Device")
         {
-            if (output_device.init(output_sample_rate, output_frame_rate) == false)
-                throw std::logic_error("libawe [exception] Could not initialize output device.");
+            if (mOutputDevice.init(output_sample_rate, output_frame_rate) == false)
+                throw std::runtime_error("libawe [exception] Could not initialize output device.");
         }
 
-    ~AEngine() { output_device.shutdown(); }
+    virtual ~AEngine() { mOutputDevice.shutdown(); }
 
-    inline Atrack& getMasterTrack() { return master_output; }
+    inline Atrack& getMasterTrack() { return mMasterTrack; }
 
-    /** @todo Add some sort of multi-threading support. */
-    inline bool update()
+    /* TODO Add some sort of multi-threading support. */
+    virtual bool update()
     {
-        if (output_device.getFIFOBuffer().size() < master_output.getOutput().getSampleCount())
+        if (mOutputDevice.getFIFOBuffer().size() < mMasterTrack.getOutput().getSampleCount())
         {
             // Process stuff
-            master_output.pull();
-            master_output.flip();
+            mMasterTrack.pull();
+            mMasterTrack.flip();
 
             // Push to output device buffer
-            output_device.getFIFOBuffer_mutex().lock();
-            master_output.push(output_device.getFIFOBuffer());
-            output_device.getFIFOBuffer_mutex().unlock();
+            mOutputDevice.getFIFOBuffer_mutex().lock();
+            mMasterTrack.push(mOutputDevice.getFIFOBuffer());
+            mOutputDevice.getFIFOBuffer_mutex().unlock();
 
             return true;
         } else {
             return false;
         }
-
     }
 };
 

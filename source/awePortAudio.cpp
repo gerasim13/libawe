@@ -3,7 +3,8 @@
 #include <cmath>
 #include <cstdio>
 
-namespace awe {
+namespace awe
+{
 
 static int PaCallback (
         const void *inputBuffer, void *outputBuffer,
@@ -13,7 +14,8 @@ static int PaCallback (
         void *userData
         )
 {
-    APortAudio::PaCallbackPacket* data = (APortAudio::PaCallbackPacket*)userData;
+    APortAudio::PaCallbackPacket* data =
+        (APortAudio::PaCallbackPacket*)userData;
     float *out = (float*)outputBuffer;
 
     /* Prevent unused argument warnings. */
@@ -46,37 +48,37 @@ static int PaCallback (
 
 bool APortAudio::init (unsigned int output_sample_rate, unsigned int output_buffer_frame_count)
 {
-    sample_rate = output_sample_rate;
-    frame_rate  = output_buffer_frame_count;
+    mSampleRate = output_sample_rate;
+    mFrameRate  = output_buffer_frame_count;
 
-    pa_error = Pa_Initialize();
+    mPAerror = Pa_Initialize();
     if (test_error()) return false;
 
-    pa_outstream_params.device = Pa_GetDefaultOutputDevice(); /* Default output device. */
-    if (pa_outstream_params.device == paNoDevice) {
+    mPAostream_params.device = Pa_GetDefaultOutputDevice(); /* Default output device. */
+    if (mPAostream_params.device == paNoDevice) {
         fprintf(stderr, "PortAudio [error] No default output device. \n");
         Pa_Terminate();
         return false;
     }
-    pa_packet.mutex       = &output_mutex;
-    pa_packet.output      = &output_queue;
-    pa_packet.calls       = 0;
-    pa_packet.underflows  = 0;
+    mPApacket.mutex       = &mOutputMutex;
+    mPApacket.output      = &mOutputQueue;
+    mPApacket.calls       = 0;
+    mPApacket.underflows  = 0;
 
-    pa_outstream_params.channelCount = 2;  /* Stereo output. */
-    pa_outstream_params.sampleFormat = paFloat32;
-    pa_outstream_params.suggestedLatency = Pa_GetDeviceInfo(pa_outstream_params.device)->defaultHighOutputLatency;
-    pa_outstream_params.hostApiSpecificStreamInfo = NULL;
-    pa_error = Pa_OpenStream (
-            &pa_outstream, NULL,        /* One output stream, No input. */
-            &pa_outstream_params,       /* Output parameters.*/
-            sample_rate, frame_rate,    /* Sample rate, Frames per buffer. */
+    mPAostream_params.channelCount = 2;  /* Stereo output. */
+    mPAostream_params.sampleFormat = paFloat32;
+    mPAostream_params.suggestedLatency = Pa_GetDeviceInfo(mPAostream_params.device)->defaultHighOutputLatency;
+    mPAostream_params.hostApiSpecificStreamInfo = NULL;
+    mPAerror = Pa_OpenStream (
+            &mPAostream, NULL,          /* One output stream, No input. */
+            &mPAostream_params,         /* Output parameters.*/
+            mSampleRate, mFrameRate,    /* Sample rate, Frames per buffer. */
             paPrimeOutputBuffersUsingStreamCallback, PaCallback,
-            &pa_packet
+            &mPApacket
             );
     if (test_error()) return false;
 
-    pa_error = Pa_StartStream(pa_outstream);
+    mPAerror= Pa_StartStream(mPAostream);
     if (test_error()) return false;
 
     return true;
@@ -84,9 +86,9 @@ bool APortAudio::init (unsigned int output_sample_rate, unsigned int output_buff
 
 bool APortAudio::test_error() const
 {
-    if (pa_error != paNoError) {
+    if (mPAerror != paNoError) {
         Pa_Terminate();
-        fprintf(stderr, "PortAudio [error] %d : %s \n", pa_error, Pa_GetErrorText(pa_error));
+        fprintf(stderr, "PortAudio [error] %d : %s \n", mPAerror, Pa_GetErrorText(mPAerror));
         return true;
     }
 
@@ -95,28 +97,28 @@ bool APortAudio::test_error() const
 
 unsigned short int APortAudio::fplay (const AfBuffer& buffer)
 {
-    output_mutex.lock();
+    mOutputMutex.lock();
 
     for(Afloat smp : buffer)
-        output_queue.push(smp);
+        mOutputQueue.push(smp);
 
-    if (pa_packet.underflows != 0)
-        fprintf (stdout, "PortAudio [warn] %u device underflows(s) on last update.\n", pa_packet.underflows);
-    if (pa_packet.calls > 1)
-        fprintf (stdout, "PortAudio [warn] %u libawe underflows(s) on last update.\n", pa_packet.calls - 1 );
+    if (mPApacket.underflows != 0)
+        fprintf( stdout, "PortAudio [warn] %u device underflows(s) on last update.\n", mPApacket.underflows );
+    if (mPApacket.calls > 1)
+        fprintf( stdout, "PortAudio [warn] %u libawe underflows(s) on last update.\n", mPApacket.calls - 1 );
 
-    pa_packet.calls = 0;
-    pa_packet.underflows = 0;
+    mPApacket.calls = 0;
+    mPApacket.underflows = 0;
 
-    output_mutex.unlock();
+    mOutputMutex.unlock();
 
     return 0;
 }
 
 void APortAudio::shutdown ()
 {
-    pa_error = Pa_StopStream (pa_outstream);
-    pa_error = Pa_CloseStream(pa_outstream);
+    mPAerror = Pa_StopStream (mPAostream);
+    mPAerror = Pa_CloseStream(mPAostream);
 
     Pa_Terminate();
 

@@ -1,124 +1,164 @@
-//  aweTrack.h :: Sound mixing track
+//  aweTrack.h :: Sound mixing track.
 //  Copyright 2012 - 2013 Keigen Shu
 
 #ifndef AWE_TRACK_H
 #define AWE_TRACK_H
 
 #include <mutex>
-#define __MUTEX__ std::lock_guard<std::mutex> lock(mutex);
+using MutexLockGuard = std::lock_guard<std::mutex>;
 
 #include <string>
 #include <algorithm>
 #include "aweDefine.h"
 #include "aweBuffer.h"
 #include "aweSource.h"
-#include "Filters/Mixer.h"
+#include "Filters/Rack.h"
 
 namespace awe {
 
+/** Sound mixer class.
+ *
+ * Used to manage and mix multiple sound sources into one
+ * output track. Filters can be chained via the filter rack
+ * to apply post-mixing sound effects.
+ *
+ * All tracks are double buffered; the internal mixing pool
+ * is labelled P while the output pool is labelled O.
+ *
+ */
 class Atrack : public Asource
 {
-    typedef Filter::AscMixer AscMixer;
+    typedef Filter::AscRack     AscRack;
 
 private:
-    mutable std::mutex mutex;
-    std::string     name;
-    ArenderConfig   config;
+    mutable std::mutex  mPmutex;    // Track pool mutex
+    mutable std::mutex  mOmutex;    // Track output mutex
 
-    AsourceSet      pool_sources;
-    AfBuffer        pool_buffer;
-    AfBuffer        output_buffer;
+    std::string         mName;      // Track label
+    ArenderConfig       mConfig;    // Track render configuration
 
-    AscMixer        mixer; //##TODO: Create FilterRack and use it here.
-    bool            disabled;
+    AsourceSet  mPsources;  // Sound sources to mix from
+    AfBuffer    mPbuffer;   // Mixing buffer
+    AfBuffer    mObuffer;   // Output buffer
+
+    AscRack     mOfilter;   // Post-mixing filter rack
+    bool        mqActive;   // Is this source active?
+
+private:
+    // Pull source into pool buffer, without mutex lock
+    void fpull(Asource* src);
+
+    // Pull assigned sources into pool buffer, without mutex lock
+    void fpull();
+
+    // Flip pool buffer with output buffer, without mutex lock
+    void fflip();
+
+    // Apply filter rack onto output buffer, without mutex lock
+    void ffilter();
 
 public:
-    Atrack (const size_t &sample_rate, const size_t &frames, const std::string &name = "Unnamed Track" ) :
-        config          (sample_rate, frames),
-        pool_buffer     (2, frames),
-        output_buffer   (2, frames),
-        mixer           (1.0f, 0.0f),
-        disabled        (true)
-    {}
+    Atrack(
+            const size_t &sampleRate,
+            const size_t &frames,
+            const std::string &name = "Unnamed Track"
+          );
 
-    inline const ArenderConfig& cgetConfig() const { return config; }
-    inline       ArenderConfig   getConfig()       { return config; }
+    virtual void drop() {}
+    virtual void make_active(void*)
+    {
+        MutexLockGuard p_lock(mPmutex);
+        mqActive = !mPsources.empty();
+    }
+    virtual bool is_active() const
+    {
+        MutexLockGuard p_lock(mPmutex);
+        return mqActive;
+    }
 
-    // TODO: Protect me
-    inline const AsourceSet& cgetSources() const { return pool_sources; }
-    inline       AsourceSet   getSources()       { return pool_sources; }
+    virtual void render(AfBuffer &targetBuffer, const ArenderConfig &targetConfig);
 
-    // TODO: Protect me
-    inline const AfBuffer& cgetOutput() const { return output_buffer; }
-    inline       AfBuffer&  getOutput()       { return output_buffer; }
+    inline const ArenderConfig& getConfig() const { return mConfig; }
+    inline       ArenderConfig  setConfig(const ArenderConfig &new_config)
+    {
+        MutexLockGuard p_lock(mPmutex);
+        return new_config;
+    }
 
-    inline const AscMixer& cgetMixer() const { return mixer; }
-    inline       AscMixer&  getMixer()       { return mixer; }
+    inline const AsourceSet& getSources() const { return mPsources; }
+    inline const AfBuffer  & getOutput () const { return mObuffer; }
+
+    inline std::mutex & getMutex() { return mOmutex; }
 
     inline size_t count_active_sources() const
     {
-        __MUTEX__
-            size_t count = 0;
-        for(const Asource* source : pool_sources)
+        MutexLockGuard p_lock(mPmutex);
+        size_t count = 0;
+        for(Asource const * src : mPsources)
         {
-            if (source->is_active() == true)
+            if (src->is_active() == true)
                 count++;
         }
         return count;
     }
 
     inline size_t count_sources() const {
-        __MUTEX__
-            return pool_sources.size();
+        MutexLockGuard p_lock(mPmutex);
+        return mPsources.size();
     }
 
     inline void attach_source(Asource* const src)
     {
-        __MUTEX__
-            if (pool_sources.count(src) == 0) pool_sources.insert(src);
-        disabled = false;
+        MutexLockGuard p_lock(mPmutex);
+        if (mPsources.count(src) == 0)
+            mPsources.insert(src);
+
+        mqActive = true;
     }
 
     inline bool detach_source(Asource* const src)
     {
-        __MUTEX__
-            bool a = pool_sources.erase(src) != 0;
-        disabled = pool_sources.empty();
-        return a;
+        MutexLockGuard p_lock(mPmutex);
+        bool r = mPsources.erase(src) != 0;
+        mqActive = !mPsources.empty();
+        return r;
     }
 
     inline void pull()
     {
-        __MUTEX__
-            for(Asource* snd: pool_sources)
-                if (snd->is_active() == true)
-                    snd->render(pool_buffer, config);
+        MutexLockGuard p_lock(mPmutex);
+        fpull();
+    }
+
+    inline void pull(Asource *src)
+    {
+        MutexLockGuard p_lock(mPmutex);
+        fpull(src);
     }
 
     inline void flip()
     {
-        __MUTEX__
-            output_buffer.reset(true);
-        output_buffer.swap(pool_buffer);
+        // Lock both mutexes without deadlock.
+        std::lock(mPmutex, mOmutex);
 
-        mixer.doI(output_buffer.begin(), output_buffer.end(), 2);
+        MutexLockGuard o_lock(mOmutex, std::adopt_lock);
+        {
+            // Unlock pool mutex after flipping.
+            MutexLockGuard p_lock(mPmutex, std::adopt_lock);
+            fflip();
+        }
+
+        ffilter();
     }
 
     inline void push(AfFIFOBuffer &queue) const
     {
-        __MUTEX__
-            for(auto s : output_buffer)
-                queue.push(s);
+        MutexLockGuard o_lock(mOmutex);
+
+        for(auto s : mObuffer)
+            queue.push(s);
     }
 
-    virtual void make_active(void* userData) {
-        __MUTEX__
-            disabled = count_sources() == 0;
-    }
-
-    virtual bool is_active() const { return !disabled; }
-    virtual void render(AfBuffer &buffer, const ArenderConfig &config);
-    virtual void drop() {}
 };
 
 

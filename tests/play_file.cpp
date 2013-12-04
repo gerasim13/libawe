@@ -53,7 +53,7 @@ int main (int argc, char**argv)
 
     smp->skip(0, true); // skip through silence at the beginning
     engine->getMasterTrack().attach_source(smp);
-    
+
     /*- Main loop -*/
     while (engine->getMasterTrack().count_active_sources() != 0)
     {
@@ -74,7 +74,7 @@ int main (int argc, char**argv)
             wvAvg[0] = wvAvg[1] = .0f;
             wvMax[0] = wvMax[0] = .0f;
 #endif
-            const AfBuffer& output = engine->getMasterTrack().cgetOutput();
+            const AfBuffer& output = engine->getMasterTrack().getOutput();
 
             for (unsigned t=0; t<frameCount; t++)
             {
@@ -95,7 +95,7 @@ int main (int argc, char**argv)
             for (int i=0; i<16; i++)
                 wvM[15-i] =
                     (wvMax[0]-i > 0) ? ((wvAvg[0]-i > 0) ? '<' : '=') : ' ';
-                    
+
             for (int i=0; i<16; i++)
                 wvN[i] =
                     (wvMax[1]-i > 0) ? ((wvAvg[1]-i > 0) ? '>' : '=') : ' ';

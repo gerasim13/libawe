@@ -58,13 +58,13 @@ struct Aframe
 
     data_type data;
 
-    Aframe () : data() {}
-    Aframe (const T         * _data) : data() { std::copy(_data, _data + Channels, data.begin()); }
-    Aframe (const data_type & _data) : data(_data) {}
-    Aframe (const data_type&& _data) : data(_data) {}
+    Aframe() : data() {}
+    Aframe(const T         * _data) : data() { std::copy(_data, _data + Channels, data.begin()); }
+    Aframe(const data_type & _data) : data(_data) {}
+    Aframe(const data_type&& _data) : data(_data) {}
 
-    T& operator[](size_t pos)       { return data[pos]; }
-    const T& operator[](size_t pos) const { return data[pos]; }
+    T       & operator[](size_t pos)       { return data[pos]; }
+    T const & operator[](size_t pos) const { return data[pos]; }
 
     /* ARITHMETIC */
     void operator+= (const T &v) { for (T& u : data) u += v; }
@@ -199,11 +199,10 @@ inline Asintf to_Asintf(const Asfloatf &f) {
 
 struct ArenderConfig
 {
-    // unsigned long systemTime;
-    unsigned long targetSampleRate; /** Sound sytem sampling rate */
-    unsigned long targetFrameCount; /** Number of frames to render onto targetBuffer. */
-    unsigned long targetFrameOffset; /** Index on the targetBuffer to start writing from. */
-    enum class renderQuality : uint8_t /** Quality option */
+    unsigned long targetSampleRate;     /** Target stream sampling rate */
+    unsigned long targetFrameCount;     /** Number of frames to render onto target buffer. */
+    unsigned long targetFrameOffset;    /** Index on the target buffer to start writing from. */
+    enum class renderQuality : uint8_t  /** Render quality option */
     {
         DEFAULT  = 0x0,
 
@@ -219,16 +218,17 @@ struct ArenderConfig
         SKIP     = 0xF
     } quality;
 
-    ArenderConfig (
+    ArenderConfig(
             unsigned long sample_rate,
             unsigned long frame_count,
             unsigned long frame_offset = 0,
             renderQuality q = renderQuality::DEFAULT
-            ) : targetSampleRate    (sample_rate),
-                  targetFrameCount    (frame_count),
-                  targetFrameOffset   (frame_offset),
-                  quality             (q)
-                  {}
+            ) :
+        targetSampleRate(sample_rate),
+        targetFrameCount(frame_count),
+        targetFrameOffset(frame_offset),
+        quality(q)
+        { }
 
 };
 
