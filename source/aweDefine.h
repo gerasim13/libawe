@@ -58,12 +58,12 @@ struct Aframe
 
     data_type data;
 
-    Aframe () : data() {} 
+    Aframe () : data() {}
     Aframe (const T         * _data) : data() { std::copy(_data, _data + Channels, data.begin()); }
     Aframe (const data_type & _data) : data(_data) {}
     Aframe (const data_type&& _data) : data(_data) {}
 
-          T& operator[](size_t pos)       { return data[pos]; }
+    T& operator[](size_t pos)       { return data[pos]; }
     const T& operator[](size_t pos) const { return data[pos]; }
 
     /* ARITHMETIC */
@@ -73,33 +73,33 @@ struct Aframe
     void operator/= (const T &v) { for (T& u : data) u /= v; }
 
     template <size_t channels>
-    Aframe operator+ (const Aframe<T, channels> &v) const {
-        Aframe f;
-        for (size_t c = 0; c < std::min(Channels,channels); ++c)
-            f.data[c] = data[c] + v[c];
-        return f;
-    }
+        Aframe operator+ (const Aframe<T, channels> &v) const {
+            Aframe f;
+            for (size_t c = 0; c < std::min(Channels,channels); ++c)
+                f.data[c] = data[c] + v[c];
+            return f;
+        }
     template <size_t channels>
-    Aframe operator- (const Aframe<T, channels> &v) const {
-        Aframe f;
-        for (size_t c = 0; c < std::min(Channels,channels); ++c)
-            f.data[c] = data[c] - v[c];
-        return f;
-    }
+        Aframe operator- (const Aframe<T, channels> &v) const {
+            Aframe f;
+            for (size_t c = 0; c < std::min(Channels,channels); ++c)
+                f.data[c] = data[c] - v[c];
+            return f;
+        }
     template <size_t channels>
-    Aframe operator* (const Aframe<T, channels> &v) const {
-        Aframe f;
-        for (size_t c = 0; c < std::min(Channels,channels); ++c)
-            f.data[c] = data[c] * v[c];
-        return f;
-    }
+        Aframe operator* (const Aframe<T, channels> &v) const {
+            Aframe f;
+            for (size_t c = 0; c < std::min(Channels,channels); ++c)
+                f.data[c] = data[c] * v[c];
+            return f;
+        }
     template <size_t channels>
-    Aframe operator/ (const Aframe<T, channels> &v) const {
-        Aframe f;
-        for (size_t c = 0; c < std::min(Channels,channels); ++c)
-            f.data[c] = data[c] / v[c];
-        return f;
-    }
+        Aframe operator/ (const Aframe<T, channels> &v) const {
+            Aframe f;
+            for (size_t c = 0; c < std::min(Channels,channels); ++c)
+                f.data[c] = data[c] / v[c];
+            return f;
+        }
 
     template <size_t channels>
         void operator+= (const Aframe<T, channels> &v) {
@@ -178,11 +178,6 @@ struct Aframe
 typedef Aframe<Aint  , 2> Asintf;       /** a stereo Aint frame   */
 typedef Aframe<Afloat, 2> Asfloatf;     /** a stereo Afloat frame */
 
-#ifdef _MSC_VER
-#define MAKE_STEREO_FRAME(FT,A,B) \
-    FT::data_type 
-#else
-#endif
 
 inline Asfloatf to_Asfloatf(const Asintf &i) {
 #ifdef _MSC_VER
@@ -230,10 +225,10 @@ struct ArenderConfig
             unsigned long frame_offset = 0,
             renderQuality q = renderQuality::DEFAULT
             ) : targetSampleRate    (sample_rate),
-    targetFrameCount    (frame_count),
-    targetFrameOffset   (frame_offset),
-    quality             (q)
-    {}
+                  targetFrameCount    (frame_count),
+                  targetFrameOffset   (frame_offset),
+                  quality             (q)
+                  {}
 
 };
 

@@ -1,6 +1,9 @@
+//  aweSample.cpp :: Sound sample class
+//  Copyright 2012 - 2013 Keigen Shu
+
 #include "aweSample.h"
 
-using namespace awe;
+namespace awe {
 
 void Asample::render (AfBuffer &buffer, const ArenderConfig &config)
 {
@@ -47,4 +50,6 @@ size_t Asample::skip(const size_t &pos, const bool &skip_silence)
     loop.now = i / source->getChannelCount();
 
     return j;
+}
+
 }
