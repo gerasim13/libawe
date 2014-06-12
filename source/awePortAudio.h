@@ -1,3 +1,6 @@
+//  awePortAudio.h :: Sound output to device via PortAudio
+//  Copyright 2012 - 2014 Chu Chin Kuan <keigen.shu@gmail.com>
+
 #ifndef AWE_PORTAUDIO_H
 #define AWE_PORTAUDIO_H
 
@@ -8,16 +11,36 @@
 
 namespace awe {
 
-/** PortAudio class to handle communication with audio device.
+/*! PortAudio class to handle communication with the audio device.
  */
 class APortAudio
 {
 public:
-    struct PaCallbackPacket {
-        std::mutex  *   mutex;      // Output FIFO buffer mutex
-        AfFIFOBuffer*   output;     // Output FIFO buffer
-        unsigned char   calls;      // Number of times PA ran this callback since last update.
-        unsigned char   underflows; // Number of times PA reported underflow problems since last update.
+    //! PortAudio callback data structure.
+    struct PaCallbackPacket
+    {
+        std::mutex  *   mutex;      //<! Output FIFO buffer mutex.
+        AfFIFOBuffer*   output;     //<! Output FIFO buffer pointer.
+        unsigned char   calls;      //<! Number of times PA ran this callback since last update.
+        unsigned char   underflows; //<! Number of times PA reported underflow problems since last update.
+    };
+
+    //! PortAudio audio output host API enumerator
+    enum class HostAPIType : int {
+        Default = 0, // paInDevelopment
+        DS      = paDirectSound,
+        MME     = paMME,
+        ASIO    = paASIO,
+        SM      = paSoundManager,
+        CA      = paCoreAudio,
+        OSS     = paOSS,
+        ALSA    = paALSA,
+        AL      = paAL,
+        BeOS    = paBeOS,
+        WDMKS   = paWDMKS,
+        JACK    = paJACK,
+        WASAPI  = paWASAPI,
+        ASHPI   = paAudioScienceHPI
     };
 
 private:
@@ -42,10 +65,17 @@ public:
     inline AfFIFOBuffer& getFIFOBuffer      ()       { return mOutputQueue; }
     inline std::mutex  & getFIFOBuffer_mutex()       { return mOutputMutex; }
 
+    inline unsigned int  getSampleRate() const { return mSampleRate; }
+    inline unsigned int  getFrameRate () const { return mFrameRate ; }
+
     //! Plays provided buffer. @returns underruns since last play.
     unsigned short int fplay(const AfBuffer& buffer);
 
-    bool init(const unsigned int output_sample_rate, const unsigned int output_buffer_frame_count);
+    bool init(
+            unsigned int sample_rate,
+            unsigned int frame_count,
+            HostAPIType device_type = HostAPIType::Default
+            );
     void shutdown();
 };
 }

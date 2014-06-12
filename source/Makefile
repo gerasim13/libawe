@@ -21,6 +21,7 @@ libawe:
 	$(CXX) $(CXXFLAGS) -c aweSample.cpp -o $(BUILD_DIR)/aweSample.o
 	$(CXX) $(CXXFLAGS) -c aweTrack.cpp  -o $(BUILD_DIR)/aweTrack.o
 	$(CXX) $(CXXFLAGS) -c Filters/Mixer.cpp -o $(BUILD_DIR)/aweFilter_Mixer.o
+	$(CXX) $(CXXFLAGS) -c Filters/IIR.cpp  -o $(BUILD_DIR)/aweFilter_IIR.o
 	$(CXX) $(CXXFLAGS) -c Filters/3BEQ.cpp  -o $(BUILD_DIR)/aweFilter_3BEQ.o
 	$(CXX) $(CXXFLAGS) -lsndfile   -c awesndfile.cpp    -o $(BUILD_DIR)/awesndfile.o
 	$(CXX) $(CXXFLAGS) -lportaudio -c awePortAudio.cpp  -o $(BUILD_DIR)/awePortAudio.o

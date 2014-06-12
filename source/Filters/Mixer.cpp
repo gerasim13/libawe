@@ -1,9 +1,10 @@
+//  Filters/Mixer.cpp :: Basic mixer filter
+//  Copyright 2013 - 2014 Chu Chin Kuan <keigen.shu@gmail.com>
+
 #include "Mixer.h"
 
-namespace awe
-{
-namespace Filter
-{
+namespace awe {
+namespace Filter {
 
 const Asfloatf AscMixer::xLinear(Afloat const &vol, Afloat const &pan)
 {

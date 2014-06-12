@@ -1,5 +1,5 @@
 //  aweLoop.cpp :: Looping sequence object
-//  Copyright 2012 - 2013 Keigen Shu
+//  Copyright 2012 - 2014 Chu Chin Kuan <keigen.shu@gmail.com>
 
 #include <stdexcept>
 #include <sstream>
@@ -7,8 +7,7 @@
 
 #include "aweLoop.h"
 
-namespace awe
-{
+namespace awe {
 
 Aloop::Aloop(
         const double &_begin,

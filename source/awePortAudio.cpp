@@ -1,12 +1,14 @@
+//  awePortAudio.cpp :: Sound output to device via PortAudio
+//  Copyright 2012 - 2014 Chu Chin Kuan <keigen.shu@gmail.com>
+
 #include "awePortAudio.h"
 
 #include <cmath>
 #include <cstdio>
 
-namespace awe
-{
+namespace awe {
 
-static int PaCallback (
+static int PaCallback(
         const void *inputBuffer, void *outputBuffer,
         unsigned long framesPerBuffer,
         const PaStreamCallbackTimeInfo* timeInfo,
@@ -46,20 +48,40 @@ static int PaCallback (
 }
 
 
-bool APortAudio::init (unsigned int output_sample_rate, unsigned int output_buffer_frame_count)
+bool APortAudio::init(
+        unsigned int sample_rate,
+        unsigned int frame_count,
+        HostAPIType device_type
+        )
 {
-    mSampleRate = output_sample_rate;
-    mFrameRate  = output_buffer_frame_count;
+    mSampleRate = sample_rate;
+    mFrameRate  = frame_count;
 
     mPAerror = Pa_Initialize();
     if (test_error()) return false;
 
-    mPAostream_params.device = Pa_GetDefaultOutputDevice(); /* Default output device. */
+    if (device_type == HostAPIType::Default) {
+        mPAostream_params.device = Pa_GetDefaultOutputDevice();
+    } else {
+        int devices = Pa_GetDeviceCount();
+        if (devices == 0) {
+            mPAostream_params.device = paNoDevice;
+        } else {
+            for(int i=0; i<devices; i++)
+                if(Pa_GetHostApiInfo(Pa_GetDeviceInfo(i)->hostApi)->type == static_cast<PaHostApiTypeId>(device_type))
+                {
+                    mPAostream_params.device = i;
+                    break;
+                }
+        }
+    }
+
     if (mPAostream_params.device == paNoDevice) {
         fprintf(stderr, "PortAudio [error] No default output device. \n");
         Pa_Terminate();
         return false;
     }
+
     mPApacket.mutex       = &mOutputMutex;
     mPApacket.output      = &mOutputQueue;
     mPApacket.calls       = 0;
@@ -95,7 +117,7 @@ bool APortAudio::test_error() const
     return false;
 }
 
-unsigned short int APortAudio::fplay (const AfBuffer& buffer)
+unsigned short int APortAudio::fplay(AfBuffer const & buffer)
 {
     mOutputMutex.lock();
 
@@ -115,7 +137,7 @@ unsigned short int APortAudio::fplay (const AfBuffer& buffer)
     return 0;
 }
 
-void APortAudio::shutdown ()
+void APortAudio::shutdown()
 {
     mPAerror = Pa_StopStream (mPAostream);
     mPAerror = Pa_CloseStream(mPAostream);

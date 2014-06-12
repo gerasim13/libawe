@@ -78,7 +78,7 @@ int main (int argc, char**argv)
 
             for (unsigned t=0; t<frameCount; t++)
             {
-                Asfloatf wvVol = output.getFrame(t);
+                Asfloatf wvVol = output.getFrame<2>(t);
                 wvVol.abs();
                 wvAvg += wvVol;
                 wvMax[0] = std::max(wvVol[0], wvMax[0]);
@@ -94,11 +94,11 @@ int main (int argc, char**argv)
 
             for (int i=0; i<16; i++)
                 wvM[15-i] =
-                    (wvMax[0]-i > 0) ? ((wvAvg[0]-i > 0) ? '<' : '=') : ' ';
+                    (wvMax[0]-i > 0) ? ((wvAvg[0]-i > 0) ? '#' : '=') : ' ';
 
             for (int i=0; i<16; i++)
                 wvN[i] =
-                    (wvMax[1]-i > 0) ? ((wvAvg[1]-i > 0) ? '>' : '=') : ' ';
+                    (wvMax[1]-i > 0) ? ((wvAvg[1]-i > 0) ? '#' : '=') : ' ';
 
             printf ("%s+%s\n", wvM, wvN);
         }

@@ -1,12 +1,14 @@
+//  aweTrack.cpp :: Sound mixing track
+//  Copyright 2012 - 2014 Chu Chin Kuan <keigen.shu@gmail.com>
+
 #include "aweTrack.h"
 
-namespace awe
-{
+namespace awe {
 
 void Atrack::fpull(Asource* src)
 {
     if (src->is_active() == true)
-        src->render(mPbuffer, mConfig);
+        src->render(mPbuffer, mPconfig);
 }
 
 void Atrack::fpull()
@@ -17,51 +19,43 @@ void Atrack::fpull()
 
 void Atrack::fflip()
 {
-    mObuffer.reset(true);
+    mObuffer.reset();
     mObuffer.swap(mPbuffer);
 }
 
 void Atrack::ffilter()
 {
-    AfBuffer::iterator b = mObuffer.begin();
-    AfBuffer::iterator e = mObuffer.end();
-
-    while(b != e)
-    {
-        mOfilter.ffdoL(*b); ++b;
-        mOfilter.ffdoR(*b); ++b;
-    }
+    mOfilter.doBuffer(mObuffer);
 }
 
 
 Atrack::Atrack(
-        const size_t &sample_rate,
-        const size_t &frames,
-        const std::string &name
-        ) :
-    mName   (name),
-    mConfig (sample_rate, frames),
-    mPbuffer(2, frames),
-    mObuffer(2, frames),
-    mqActive(true)
-{}
+    const size_t &sample_rate,
+    const size_t &frames,
+    const std::string &name
+)   : mName   (name)
+    , mPconfig(sample_rate, frames)
+    , mPbuffer(2, frames)
+    , mObuffer(2, frames)
+    , mqActive(true)
+{ }
 
 void Atrack::render(AfBuffer &targetBuffer, const ArenderConfig &targetConfig)
 {
     std::lock(mPmutex, mOmutex);
 
+    size_t a = 0, p = targetConfig.targetFrameOffset;
+    size_t const  q = targetConfig.targetFrameOffset + mPconfig.targetFrameCount;
+
     MutexLockGuard o_lock(mOmutex, std::adopt_lock);
     {
-        // Unlock pool mutex after mixing.
+        // Unlock pool mutex immediately after mixing.
         MutexLockGuard p_lock(mPmutex, std::adopt_lock);
         fpull();
         fflip();
     }
 
     ffilter();
-
-    size_t a = 0, p = targetConfig.targetFrameOffset;
-    size_t const  q = targetConfig.targetFrameOffset + mConfig.targetFrameCount;
 
     AfBuffer::const_pointer src = mObuffer.data();
     AfBuffer::      pointer dst = targetBuffer.data();
