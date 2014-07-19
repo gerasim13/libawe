@@ -10,8 +10,8 @@ The main function of this class is to provide the application developer a simple
 interface to hook libawe's audio data source (\ref awe::Asource) objects into a
 single unified audio output stream and then move them into PortAudio's internal
 buffering mechanism. This is done by buffering sources from a source pool ahead
-of time inside a master output track (\ref awe::AEngine::mOutputDevice) contained
-within this class through the \ref awe::AEngine::update() function.
+of time inside a master output track (\ref awe::AEngine::mOutputDevice)
+contained within this class through the \ref awe::AEngine::update() function.
 
 The diagram below illustrates the flow of data from an audio source to the
 master output track to the library output queue to the audio output host.
@@ -30,12 +30,12 @@ digraph audioflow {
         subgraph cluster_la_e {
             label="Master Output Track" URL="\ref awe::AEngine::mMasterTrack";
 
-            sp [ label="Source pool"    URL="\ref awe::Atrack::mPsources"; ];
-            pb [ label="Pooling buffer" URL="\ref awe::Atrack::mPbuffer"; ];
-            ob [ label="Output buffer"  URL="\ref awe::Atrack::mObuffer"; ];
+            sp [ label="Source pool"    URL="\ref awe::Source::Track::mPsources"; ];
+            pb [ label="Pooling buffer" URL="\ref awe::Source::Track::mPbuffer"; ];
+            ob [ label="Output buffer"  URL="\ref awe::Source::Track::mObuffer"; ];
 
-            sp -> pb [ label="Mix sources"  URL="\ref awe::Atrack::pull()"; weight=0.5; ];
-            pb -> ob [ label="Swap buffers" URL="\ref awe::Atrack::flip()"; ];
+            sp -> pb [ label="Mix sources"  URL="\ref awe::Source::Track::pull()"; weight=0.5; ];
+            pb -> ob [ label="Swap buffers" URL="\ref awe::Source::Track::flip()"; ];
 
             { rank=same; pb ob; }
         }
@@ -61,25 +61,22 @@ digraph audioflow {
 
 Operation details
 -----------------
-When this object is constructed, an audio output stream will be
-automatically configured and then started immediately. A thread
-would be spawned by PortAudio which periodically invokes the
-aforementioned callback to fill the <em>circular buffer</em> with
-data from the <em>output queue</em> until either the <em>output
-queue</em> is empty, or if the <em>circular buffer</em> is full.
-The former would mean that the engine is not updated often enough,
-which causes audio jitters as a result of <em>underflows</em> while
-the latter would cause the callback return immediately so that the
-output device uses up the buffer and calls the callback later.
+When this object is constructed, an audio output stream will be automatically
+configured and then started immediately. A thread would be spawned by PortAudio
+which periodically invokes the aforementioned callback to fill the *circular
+buffer* with data from the *output queue* until either the *output queue* is
+empty, or if the *circular buffer* is full. The former would mean that the
+engine is not updated often enough, which causes audio jitters as a result of
+*underflows* while the latter would cause the callback return immediately so
+that the output device uses up the buffer and calls the callback later.
 
 Usage details
 -------------
-A typical application using this class should attach the relevant
-audio sources into the master track and then invoke the
-\ref update() function to load data into the output buffer.
-The PortAudio object is intentionally hidden from the public scope
-of this class to avoid unnecessary tinkering.
-\note The PortAudio instance within this class has its own mutex
-lock that determines the ownership of the is locked by the \ref update()
+A typical application using this class should attach the relevant audio sources
+into the master track and then invoke the \ref awe::AEngine::update() function
+to load data into the output buffer. The PortAudio object is intentionally
+hidden from the public scope of this class to avoid unnecessary tinkering.
+\note The PortAudio instance within this class has its own mutex lock that
+determines the ownership of the is locked by the \ref awe::AEngine::update().
 
 

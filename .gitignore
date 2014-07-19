@@ -1,6 +1,7 @@
 # Test objects directory
 # This is where you put your own files for testing/debugging purposes
-test/
+tests/
+!tests/*.cpp
 
 # Compiled Object files
 *.slo
@@ -15,6 +16,9 @@ test/
 *.lai
 *.la
 *.a
+
+# Makefile
+build/unix
 
 # Microsoft Visual Studio
 build/msvc/Debug/

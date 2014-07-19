@@ -1,24 +1,25 @@
 //  awePortAudio.cpp :: Sound output to device via PortAudio
-//  Copyright 2012 - 2014 Chu Chin Kuan <keigen.shu@gmail.com>
+//  Copyright 2012 - 2013 Keigen Shu
 
-#include "awePortAudio.h"
+#include "awePortAudio.hpp"
 
 #include <cmath>
 #include <cstdio>
 
-namespace awe {
+namespace awe
+{
 
 static int PaCallback(
-        const void *inputBuffer, void *outputBuffer,
+        const void* inputBuffer, void* outputBuffer,
         unsigned long framesPerBuffer,
         const PaStreamCallbackTimeInfo* timeInfo,
         PaStreamCallbackFlags statusFlags,
-        void *userData
+        void* userData
         )
 {
     APortAudio::PaCallbackPacket* data =
         (APortAudio::PaCallbackPacket*)userData;
-    float *out = (float*)outputBuffer;
+    float* out = (float*)outputBuffer;
 
     /* Prevent unused argument warnings. */
     (void) inputBuffer;
@@ -28,15 +29,14 @@ static int PaCallback(
         data->underflows++;
 
     /* Library failed to update sooner. */
-    if (data->output->size() < framesPerBuffer * 2)
-    {
-        for (unsigned int i=0; i<framesPerBuffer; i++) {
+    if (data->output->size() < framesPerBuffer * 2) {
+        for (unsigned int i = 0; i < framesPerBuffer; i++) {
             *out++ = 0;
             *out++ = 0;
         }
     } else {
         data->mutex->lock();
-        for (unsigned int i=0; i<framesPerBuffer; i++) {
+        for (unsigned int i = 0; i < framesPerBuffer; i++) {
             *out++ = data->output->front(); data->output->pop();
             *out++ = data->output->front(); data->output->pop();
         }
@@ -67,9 +67,8 @@ bool APortAudio::init(
         if (devices == 0) {
             mPAostream_params.device = paNoDevice;
         } else {
-            for(int i=0; i<devices; i++)
-                if(Pa_GetHostApiInfo(Pa_GetDeviceInfo(i)->hostApi)->type == static_cast<PaHostApiTypeId>(device_type))
-                {
+            for (int i = 0; i < devices; i++)
+                if (Pa_GetHostApiInfo(Pa_GetDeviceInfo(i)->hostApi)->type == static_cast<PaHostApiTypeId>(device_type)) {
                     mPAostream_params.device = i;
                     break;
                 }
@@ -91,7 +90,7 @@ bool APortAudio::init(
     mPAostream_params.sampleFormat = paFloat32;
     mPAostream_params.suggestedLatency = Pa_GetDeviceInfo(mPAostream_params.device)->defaultHighOutputLatency;
     mPAostream_params.hostApiSpecificStreamInfo = NULL;
-    mPAerror = Pa_OpenStream (
+    mPAerror = Pa_OpenStream(
             &mPAostream, NULL,          /* One output stream, No input. */
             &mPAostream_params,         /* Output parameters.*/
             mSampleRate, mFrameRate,    /* Sample rate, Frames per buffer. */
@@ -100,7 +99,7 @@ bool APortAudio::init(
             );
     if (test_error()) return false;
 
-    mPAerror= Pa_StartStream(mPAostream);
+    mPAerror = Pa_StartStream(mPAostream);
     if (test_error()) return false;
 
     return true;
@@ -117,11 +116,11 @@ bool APortAudio::test_error() const
     return false;
 }
 
-unsigned short int APortAudio::fplay(AfBuffer const & buffer)
+unsigned short int APortAudio::fplay(AfBuffer const& buffer)
 {
     mOutputMutex.lock();
 
-    for(Afloat smp : buffer)
+    for(Afloat const & smp : buffer)
         mOutputQueue.push(smp);
 
     if (mPApacket.underflows != 0)

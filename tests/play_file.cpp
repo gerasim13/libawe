@@ -1,13 +1,15 @@
-#include "../source/aweEngine.h"
-#include "../source/aweSample.h"
+#include "../source/Engine.hpp"
+#include "../source/Filters/Metering.hpp"
+#include "../source/Sources/Sampler.hpp"
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <thread>
+#include <memory>
 
 using namespace awe;
 
-int main (int argc, char**argv)
+int main (int argc, char** argv)
 {
     /* Number of frames to update per loop.
      * Anything above 2048 should be fine on most systems.
@@ -41,18 +43,21 @@ int main (int argc, char**argv)
     frameCount = (frameCount < 128) ? 128 : frameCount; /* Minimum of 128 frames per update */
 
     /*- Start engine -*/
-    AEngine* engine = new AEngine (48000, frameCount);
+    auto engine = std::make_shared<AEngine>(48000, frameCount);
 
     /*- Open file -*/
-    Asample* smp = new Asample(argv[1]);
-
-    if (smp->getSource() == nullptr) {
-        printf("Failed to read file. Exiting... \n");
+    auto sample = std::make_shared<Asample>(argv[1]);
+    if (!sample->getSource()) {
+        fprintf(stderr, "Failed to read file. Exiting... \n");
         return 0;
     }
 
-    smp->skip(0, true); // skip through silence at the beginning
-    engine->getMasterTrack().attach_source(smp);
+    auto sampler = std::make_shared<Source::Sampler>(sample, 48000 / playSpeed);
+    auto meter   = std::make_shared<Filter::AscMetering>(48000, 0.0);
+
+    // smp->skip(0, true); // skip through silence at the beginning
+    engine->getMasterTrack().attach_source(sampler);
+    engine->getMasterTrack().getRack().attach_filter(meter);
 
     /*- Main loop -*/
     while (engine->getMasterTrack().count_active_sources() != 0)
@@ -61,44 +66,21 @@ int main (int argc, char**argv)
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         } else {
             /*- Console Visualization -*/
-#ifndef _MSC_VER
-            Asfloatf wvSum {{ .0f, .0f }}; // Waveform
-            Asfloatf wvAvg {{ .0f, .0f }};
-            Asfloatf wvMax {{ .0f, .0f }};
-#else
-            /* MSVC2012 does not have initializer lists, so you have to do it this way. */
-            Asfloatf wvSum;
-            Asfloatf wvAvg;
-            Asfloatf wvMax;
-            wvSum[0] = wvSum[1] = .0f;
-            wvAvg[0] = wvAvg[1] = .0f;
-            wvMax[0] = wvMax[0] = .0f;
-#endif
-            const AfBuffer& output = engine->getMasterTrack().getOutput();
+            auto p = meter->getPeak();
+            auto r = meter->getAvgRMS();
+            p *= 16.0f;
+            r *= 16.0f;
 
-            for (unsigned t=0; t<frameCount; t++)
-            {
-                Asfloatf wvVol = output.getFrame<2>(t);
-                wvVol.abs();
-                wvAvg += wvVol;
-                wvMax[0] = std::max(wvVol[0], wvMax[0]);
-                wvMax[1] = std::max(wvVol[1], wvMax[1]);
-            }
+            char wvM[21]; wvM[20] = 0; // Waveform, left
+            char wvN[21]; wvN[20] = 0; // Waveform, right
 
-            wvAvg /= frameCount;
-            wvAvg *= 8.0f * 3.14159265f;
-            wvMax *= 8.0f * 3.14159265f;
+            for (int i=0; i<20; i++)
+                wvM[19-i] =
+                    (p[0]-i > 0) ? ((r[0]-i > 0) ? '#' : '=') : ' ';
 
-            char wvM[17]; wvM[16] = 0; // Waveform, left
-            char wvN[17]; wvN[16] = 0; // Waveform, right
-
-            for (int i=0; i<16; i++)
-                wvM[15-i] =
-                    (wvMax[0]-i > 0) ? ((wvAvg[0]-i > 0) ? '#' : '=') : ' ';
-
-            for (int i=0; i<16; i++)
+            for (int i=0; i<20; i++)
                 wvN[i] =
-                    (wvMax[1]-i > 0) ? ((wvAvg[1]-i > 0) ? '#' : '=') : ' ';
+                    (p[1]-i > 0) ? ((r[1]-i > 0) ? '#' : '=') : ' ';
 
             printf ("%s+%s\n", wvM, wvN);
         }
@@ -106,7 +88,11 @@ int main (int argc, char**argv)
 
     printf ("Done playing. Cleaning-up... \n");
 
-    delete engine;
+    // This part is optional because we're using shared_ptr.
+    // meter   = nullptr;
+    // sampler = nullptr;
+    // sample  = nullptr;
+    // engine  = nullptr;
 
     printf ("Exit \n");
 
